@@ -1,0 +1,23 @@
+## Interface: 11506, 11508, 20505, 30405, 40401, 40402, 50503
+## Title: |cffff9716iCommunityChat |cFF00FF00v0.1.0|r
+## Version: 0.1.0
+## Notes: |cffff9716Cross-Guild Community Addon|n|cFFFF0000Your community, your chat.|r
+## Author: Crasling
+## IconTexture: Interface\AddOns\iCommunityChat\Images\Logo_iCC.blp
+## Category: Social
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariables: iCCSettings, iCCCommunities
+## X-Curse-Project-ID: 1482736
+
+embeds.xml
+Localization\locale.xml
+
+iCommunityChat_Main.lua
+iCommunityChat_Functions.lua
+iCommunityChat_Roster.lua
+iCommunityChat_Comm.lua
+iCommunityChat_OptionsPanel.lua
+iCommunityChat_EventHandler.lua
+iCommunityChat_Frames.lua
+iCommunityChat_DataBroker.lua

@@ -1,0 +1,73 @@
+================================================================================
+ iCommunityChat - Changelog
+================================================================================
+
+v0.1.0 - Initial Release
+--------------------------------------------------------------------------------
+
+ [NEW] Community Management
+  - Create cross-guild communities with /icc create <name>
+  - Join up to 5 communities simultaneously
+  - Community tabs for switching between multiple communities
+  - Leave community with /icc leave (confirmation prompt)
+  - Leader can disband community
+
+ [NEW] Roster Window
+  - Guild-style roster window toggled with /icc or minimap button
+  - Members displayed with online status dot, class-colored name, rank, and level
+  - Sorted: online first, then by role (Leader > Officer > Member), then alphabetical
+  - Right-click context menu: Whisper, Promote, Demote, Kick (permission-gated)
+  - Column headers: Name, Rank, Level
+
+ [NEW] Private Chat
+  - Chat panel integrated into the roster window
+  - Messages displayed with optional timestamps and class-colored sender names
+  - All communication via AceComm WHISPER (full privacy, no public channels)
+  - Message history stored locally per community (max 200 messages)
+  - Sound notification option for incoming messages
+
+ [NEW] Invitation System
+  - Invite players with /icc invite <name> or the Invite button
+  - Invitation popup with Accept/Decline buttons (60s timeout)
+  - Full roster sync sent to new members on join
+  - Roster changes broadcast to all online members in real-time
+
+ [NEW] Role System
+  - Three roles: Leader, Officer, Member
+  - Leader: invite, kick, promote, demote, disband
+  - Officer: invite, kick
+  - Member: chat only
+  - Leadership transfer via promote to Leader (self-demotes to Officer)
+
+ [NEW] Online Detection
+  - Heartbeat system: 90-second interval broadcast to all community members
+  - Members marked offline after 270 seconds without heartbeat
+  - Auto-adjusts heartbeat interval for large communities (>20 members)
+  - Online status reset on addon load (re-detected via heartbeat)
+
+ [NEW] Settings
+  - Debug Mode toggle
+  - Show Timestamps in Chat toggle
+  - Play Sound on New Message toggle
+  - Show Minimap Button toggle
+
+ [NEW] Minimap Button (LibDataBroker)
+  - Left-click: Toggle roster window
+  - Right-click: Open settings
+  - Tooltip: Community list with online/total member counts
+
+ [NEW] Slash Commands
+  - /icc — Toggle roster window
+  - /icc create <name> — Create a new community
+  - /icc invite <player> — Invite a player to active community
+  - /icc leave — Leave the active community
+  - /icc settings — Open settings panel
+  - /icc help — Show command help
+
+ [TECHNICAL]
+  - AceComm WHISPER-only protocol with 7 prefixes (Chat, Heartbeat, Invite, InvReply, Roster, Sync, Version)
+  - Roster versioning with incremental sync
+  - Sender validation on all incoming messages
+  - Combat lockout: UI hidden during combat
+  - Template compatibility: InterfaceOptionsCheckButtonTemplate / UICheckButtonTemplate, BackdropTemplate
+  - Multi-TOC support: Classic Era, TBC, Wrath, Cata, MoP, Retail
