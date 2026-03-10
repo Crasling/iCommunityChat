@@ -142,6 +142,7 @@ iCC.Colors = {
     Gray    = "|cFF808080",
     White   = "|cFFFFFFFF",
     Yellow  = "|cFFFFFF00",
+    Orange  = "|cFFFFA500",
     Reset   = "|r",
 
     Online  = "|cFF00FF00",  -- Green for online

@@ -136,8 +136,8 @@ L["ChatFrameAlwaysOn"] = "(always on)"
 -- │                              Minimap Tooltip                                   │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
-L["MinimapLeftClick"] = Colors.Green .. "Left-Click:" .. Colors.Reset .. " Toggle Roster"
-L["MinimapRightClick"] = Colors.Green .. "Right-Click:" .. Colors.Reset .. " Settings"
+L["MinimapLeftClick"] = Colors.Yellow .. "Left-Click: " .. Colors.iCC .. "Toggle Roster"
+L["MinimapRightClick"] = Colors.Yellow .. "Right-Click: " .. Colors.iCC .. "Settings"
 L["NoCommunities"] = Colors.Gray .. "No communities" .. Colors.Reset
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮

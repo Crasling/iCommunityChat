@@ -42,7 +42,7 @@ local iCCLDB = LDBroker:NewDataObject("iCommunityChat", {
         end
     end,
     OnTooltipShow = function(tooltip)
-        tooltip:AddLine(iCC.Colors.iCC .. "iCommunityChat|r v" .. iCC.Version)
+        tooltip:SetText(iCC.Colors.iCC .. "iCommunityChat" .. iCC.Colors.Green .. " v" .. iCC.Version, 1, 1, 1)
         tooltip:AddLine(" ")
 
         -- Show communities with online counts
@@ -57,12 +57,12 @@ local iCCLDB = LDBroker:NewDataObject("iCommunityChat", {
                 )
             end
         else
-            tooltip:AddLine(L["NoCommunities"])
+            tooltip:AddLine(L["NoCommunities"], 1, 1, 1)
         end
 
-        tooltip:AddLine(" ")
-        tooltip:AddLine(L["MinimapLeftClick"])
-        tooltip:AddLine(L["MinimapRightClick"])
+        tooltip:AddLine(" ", 1, 1, 1)
+        tooltip:AddLine(L["MinimapLeftClick"], 1, 1, 1)
+        tooltip:AddLine(L["MinimapRightClick"], 1, 1, 1)
     end,
 })
 

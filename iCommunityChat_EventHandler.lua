@@ -106,7 +106,9 @@ function iCC:OnEnable()
 
     print(
         iCC.Colors.iCC .. "[iCC]: " ..
-        iCC.Colors.Green .. "v" .. iCC.Version ..
+        "iCommunityChat " ..
+        iCC.GameVersionName ..
+        iCC.Colors.Green .. " v" .. iCC.Version ..
         iCC.Colors.iCC .. " Loaded."
     )
 

@@ -136,8 +136,8 @@ L["ChatFrameAlwaysOn"] = "(всегда вкл.)" -- ИИ перевод
 -- │                           Подсказка миникарты                                  │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
-L["MinimapLeftClick"] = Colors.Green .. "ЛКМ:" .. Colors.Reset .. " Состав" -- ИИ перевод
-L["MinimapRightClick"] = Colors.Green .. "ПКМ:" .. Colors.Reset .. " Настройки" -- ИИ перевод
+L["MinimapLeftClick"] = Colors.Yellow .. "ЛКМ: " .. Colors.iCC .. "Состав" -- ИИ перевод
+L["MinimapRightClick"] = Colors.Yellow .. "ПКМ: " .. Colors.iCC .. "Настройки" -- ИИ перевод
 L["NoCommunities"] = Colors.Gray .. "Нет сообществ" .. Colors.Reset -- ИИ перевод
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
