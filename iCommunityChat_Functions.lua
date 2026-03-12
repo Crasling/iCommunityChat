@@ -114,6 +114,9 @@ end
 function iCC:EnterChatMode(communityKey)
     if not communityKey or not iCCCommunities[communityKey] then return end
 
+    -- Already in chat mode for this community — no-op
+    if iCC.State.ChatMode and iCC.State.ChatModeCommunity == communityKey then return end
+
     iCC.State.ChatMode = true
     iCC.State.ChatModeCommunity = communityKey
 
@@ -150,13 +153,14 @@ function iCC:ExitChatMode()
         originalTabName = nil
     end
 
-    -- Restore original text color and insets
+    -- Restore original text color
     local editBox = ChatFrame1EditBox
     editBox:SetTextColor(1, 1, 1)
-    if originalTextInsets then
-        editBox:SetTextInsets(unpack(originalTextInsets))
-        originalTextInsets = nil
-    end
+    originalTextInsets = nil
+
+    -- Restore WoW's default header — ChatEdit_UpdateHeader sets both
+    -- the header text and the text insets dynamically for the current chatType
+    ChatEdit_UpdateHeader(editBox)
 end
 
 -- Install the OnEnterPressed hook — called once from OnEnable
@@ -168,9 +172,13 @@ function iCC:InstallChatModeHook()
         if iCC.State.ChatMode then
             local text = self:GetText()
 
-            -- If text starts with /, exit chat mode and let WoW handle it
+            -- If text starts with /, let WoW handle it
+            -- Skip ExitChatMode for /cc (slash handler will re-enter anyway)
             if text and text:sub(1, 1) == "/" then
-                iCC:ExitChatMode()
+                local lower = text:lower()
+                if lower ~= "/cc" and lower:sub(1, 4) ~= "/cc " then
+                    iCC:ExitChatMode()
+                end
                 if origOnEnterPressed then
                     origOnEnterPressed(self)
                 end
@@ -201,8 +209,17 @@ function iCC:InstallChatModeHook()
     editBox:HookScript("OnShow", function()
         if iCC.State.ChatMode then
             C_Timer.After(0, function()
+                if not iCC.State.ChatMode then return end
                 ApplyChatModeHeader()
             end)
+        end
+    end)
+
+    -- When edit box gains focus (e.g., clicking a whisper reply), exit CC mode
+    -- if WoW changed the chatType to something other than SAY
+    editBox:HookScript("OnEditFocusGained", function(self)
+        if iCC.State.ChatMode and self.chatType and self.chatType ~= "SAY" then
+            iCC:ExitChatMode()
         end
     end)
 
@@ -239,18 +256,6 @@ function iCC:InstallChatModeHook()
                 else
                     iCC:Msg("No community to chat in.")
                 end
-                return
-            end
-        end
-
-        -- /cc typed while IN chat mode — toggle off
-        if iCC.State.ChatMode and text then
-            local lower = text:lower()
-            if lower == "/cc " then
-                self:SetText("")
-                local cKey = iCC.State.ChatModeCommunity
-                iCC:ExitChatMode()
-                iCC:Msg("Community chat mode " .. iCC.Colors.Red .. "off|r.", cKey)
                 return
             end
         end

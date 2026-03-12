@@ -272,9 +272,9 @@ function iCC:SendInvite(communityKey, targetPlayer)
     local inviterName = UnitName("player")
     local communityName = community.name
 
-    -- If no response within 30s, target likely doesn't have the addon — send whisper fallback
+    -- If no response within 10s, target likely doesn't have the addon — send whisper fallback
     local cKey = communityKey
-    C_Timer.After(30, function()
+    C_Timer.After(10, function()
         local pending = iCC.PendingInvites and iCC.PendingInvites[targetName]
         -- No whisper if: ack received, or pending was consumed (reply processed)
         if not pending then return end

@@ -298,14 +298,8 @@ function iCC:OnEnable()
             -- Quick send: /cc hello world
             iCC:SendChatMessage(communityKey, msg)
         else
-            -- Toggle sticky chat mode
-            if iCC.State.ChatMode then
-                local cKey = iCC.State.ChatModeCommunity
-                iCC:ExitChatMode()
-                iCC:Msg("Community chat mode " .. iCC.Colors.Red .. "off|r.", cKey)
-            else
-                iCC:EnterChatMode(communityKey)
-            end
+            -- Always enter chat mode (/cc never turns off — use /s, /g, etc. to exit)
+            iCC:EnterChatMode(communityKey)
         end
     end
 
@@ -321,8 +315,18 @@ function iCC:OnEnable()
 
     -- Detect when user changes chat type (typing /s, /g, /p, etc.) — exit ICC mode
     hooksecurefunc("ChatEdit_UpdateHeader", function(editBox)
-        if iCC.State.ChatMode and editBox.chatType ~= "SAY" then
-            iCC:ExitChatMode()
+        if iCC.State.ChatMode then
+            if editBox.chatType ~= "SAY" then
+                -- /g, /p, /w, etc. — chatType changed away from SAY
+                iCC:ExitChatMode()
+            else
+                -- /s case — chatType is still SAY but WoW rewrote the header
+                local headerText = editBox.header and editBox.header:GetText() or ""
+                local community = iCCCommunities[iCC.State.ChatModeCommunity]
+                if community and not headerText:find(community.name, 1, true) then
+                    iCC:ExitChatMode()
+                end
+            end
         end
     end)
 

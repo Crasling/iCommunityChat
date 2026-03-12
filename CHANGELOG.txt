@@ -2,6 +2,14 @@
  iCommunityChat - Changelog
 ================================================================================
 
+v0.2.1 - Release
+--------------------------------------------------------------------------------
+
+ [FIX] /cc mode — header and padding now properly restore when exiting
+ [FIX] /cc mode — typing /s no longer sends message to community chat
+ [FIX] /cc mode — clicking a whisper reply now exits community chat mode
+ [FIX] /cc mode — /cc always activates (use /s, /g, /p, /w to exit)
+
 v0.2.0 - Release
 --------------------------------------------------------------------------------
 
