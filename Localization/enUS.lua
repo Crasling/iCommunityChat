@@ -60,6 +60,7 @@ L["CommunityDisbanded"] = Msg("Community " .. Colors.iCC .. "%s" .. Colors.Reset
 L["CommunityJoined"] = Msg("You joined " .. Colors.iCC .. "%s" .. Colors.Reset .. "!")
 L["CommunityLeft"] = Msg("You left " .. Colors.iCC .. "%s" .. Colors.Reset .. ".")
 L["CommunityKicked"] = Msg("You have been removed from " .. Colors.iCC .. "%s" .. Colors.Reset .. ".")
+L["CommunityName"] = Colors.iCC .. "Community Name"
 L["CommunityNameEmpty"] = Msg(Colors.Red .. "Community name cannot be empty." .. Colors.Reset)
 L["CommunityNameTooLong"] = Msg(Colors.Red .. "Community name is too long." .. Colors.Reset)
 L["CommunityAlreadyExists"] = Msg(Colors.Red .. "A community with that name already exists." .. Colors.Reset)

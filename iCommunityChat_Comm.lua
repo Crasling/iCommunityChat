@@ -115,7 +115,7 @@ function iCC:SendChatMessage(communityKey, text)
     local communityName = iCCCommunities[communityKey] and iCCCommunities[communityKey].name or communityKey
     local playerName = strsplit("-", playerKey)
     local _, classToken = UnitClass("player")
-    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(playerName, classToken) .. ": |r" .. text)
+    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(playerName, classToken) .. ": |r" .. text, communityKey)
 
     -- Fire callback so Frames can update the chat display
     iCC:SendMessage("ICC_CHAT_MESSAGE_RECEIVED", communityKey)
@@ -153,7 +153,7 @@ function iCC:OnChatMessage(prefix, message, distribution, sender)
     local communityName = iCCCommunities[communityKey] and iCCCommunities[communityKey].name or communityKey
     local senderName = strsplit("-", senderKey)
     local senderClass = iCCCommunities[communityKey].members[senderKey] and iCCCommunities[communityKey].members[senderKey].class or "UNKNOWN"
-    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(senderName, senderClass) .. ": |r" .. data.text)
+    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(senderName, senderClass) .. ": |r" .. data.text, communityKey)
 
     -- Fire callback for UI
     iCC:SendMessage("ICC_CHAT_MESSAGE_RECEIVED", communityKey)
@@ -249,10 +249,12 @@ function iCC:SendInvite(communityKey, targetPlayer)
     if not community then return end
 
     local playerKey = iCC:GetPlayerKey()
+    local token = math.random(100000, 999999)
     local data = {
         communityKey = communityKey,
         communityName = community.name,
         inviter = playerKey,
+        token = token,
     }
 
     local serialized = iCC:Serialize(data)
@@ -260,19 +262,29 @@ function iCC:SendInvite(communityKey, targetPlayer)
     iCC:Msg("Invitation sent to " .. iCC.Colors.iCC .. targetPlayer .. iCC.Colors.Reset .. ".")
     iCC:DebugMsg("Invite sent to " .. targetPlayer .. " for " .. communityKey, 3)
 
-    -- Track pending invite — if no ack within 5s, target doesn't have the addon
+    -- Track pending invite with security token
     iCC.PendingInvites = iCC.PendingInvites or {}
-    iCC.PendingInvites[targetPlayer] = true
+    local targetName = strsplit("-", targetPlayer)
+    iCC.PendingInvites[targetName] = {
+        token = token,
+        communityKey = communityKey,
+    }
     local inviterName = UnitName("player")
     local communityName = community.name
+
+    -- If no ack within 5s, target doesn't have the addon — send whisper fallback
     C_Timer.After(5, function()
-        if iCC.PendingInvites[targetPlayer] then
+        if iCC.PendingInvites[targetName] and not iCC.PendingInvites[targetName].acked then
             SendChatMessage(
-                inviterName .. ' has invited you to join "' .. communityName .. '" via "iCommunityChat" on CurseForge!',
+                inviterName .. ' has invited you to join the community "' .. communityName .. '". Download "iCommunityChat" on CurseForge to join.',
                 "WHISPER", nil, targetPlayer
             )
-            iCC.PendingInvites[targetPlayer] = nil
         end
+    end)
+
+    -- Expire pending invite after 120s to prevent stale entries
+    C_Timer.After(120, function()
+        iCC.PendingInvites[targetName] = nil
     end)
 end
 
@@ -282,8 +294,8 @@ end
 
 function iCC:OnInviteAck(prefix, message, distribution, sender)
     local senderName = strsplit("-", sender)
-    if iCC.PendingInvites then
-        iCC.PendingInvites[senderName] = nil
+    if iCC.PendingInvites and iCC.PendingInvites[senderName] then
+        iCC.PendingInvites[senderName].acked = true
     end
 end
 
@@ -304,6 +316,7 @@ function iCC:OnInviteReceived(prefix, message, distribution, sender)
     local communityKey = data.communityKey
     local communityName = data.communityName
     local inviter = data.inviter or iCC:VerifyRealm(sender)
+    local token = data.token
 
     -- Check if already in this community
     if iCCCommunities and iCCCommunities[communityKey] then
@@ -319,20 +332,20 @@ function iCC:OnInviteReceived(prefix, message, distribution, sender)
         end
     end
     if count >= iCC.CONSTANTS.MAX_COMMUNITIES_PER_PLAYER then
-        iCC:SendInviteReply(sender, communityKey, false, "max_communities")
+        iCC:SendInviteReply(sender, communityKey, false, "max_communities", token)
         iCC:Msg("Cannot join " .. communityName .. " — you are in too many communities.")
         return
     end
 
     -- Show popup to accept or decline
-    iCC:ShowInvitePopup(communityName, inviter, communityKey, sender)
+    iCC:ShowInvitePopup(communityName, inviter, communityKey, sender, token)
 end
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
 -- │                           Send: Invite Reply                                   │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
-function iCC:SendInviteReply(targetPlayer, communityKey, accepted, reason)
+function iCC:SendInviteReply(targetPlayer, communityKey, accepted, reason, token)
     local playerKey = iCC:GetPlayerKey()
     local _, classToken = UnitClass("player")
     local level = UnitLevel("player")
@@ -344,6 +357,7 @@ function iCC:SendInviteReply(targetPlayer, communityKey, accepted, reason)
         class = classToken,
         level = level,
         reason = reason,
+        token = token,
     }
 
     local serialized = iCC:Serialize(data)
@@ -362,6 +376,25 @@ function iCC:OnInviteReply(prefix, message, distribution, sender)
 
     local communityKey = data.communityKey
     local senderKey = data.sender or iCC:VerifyRealm(sender)
+
+    -- Validate invite token
+    local senderName = strsplit("-", sender)
+    local pending = iCC.PendingInvites and iCC.PendingInvites[senderName]
+    if not pending then
+        iCC:DebugMsg("Invite reply rejected: no pending invite for " .. senderName, 2)
+        return
+    end
+    if pending.communityKey ~= communityKey then
+        iCC:DebugMsg("Invite reply rejected: community key mismatch for " .. senderName, 2)
+        return
+    end
+    if not data.token or data.token ~= pending.token then
+        iCC:DebugMsg("Invite reply rejected: invalid token from " .. senderName, 2)
+        return
+    end
+
+    -- Token validated, clean up
+    iCC.PendingInvites[senderName] = nil
 
     if data.accepted then
         -- Add them to our roster
@@ -420,9 +453,11 @@ function iCC:BroadcastSettingsChange(communityKey)
     local data = {
         communityKey = communityKey,
         action = "settings",
+        name = community.name,
         icon = community.icon,
         description = community.description,
         rules = community.rules,
+        rankNames = community.rankNames,
         rosterVersion = community.rosterVersion,
     }
 
@@ -499,9 +534,11 @@ function iCC:OnRosterUpdate(prefix, message, distribution, sender)
 
     elseif data.action == "settings" then
         -- Community settings update from leader
+        if data.name and data.name ~= "" then community.name = data.name end
         if data.icon ~= nil then community.icon = data.icon end
         community.description = data.description or community.description or ""
         community.rules = data.rules or community.rules or ""
+        if data.rankNames then community.rankNames = data.rankNames end
         community.rosterVersion = data.rosterVersion or (community.rosterVersion + 1)
     end
 
@@ -701,7 +738,7 @@ end
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
 -- Show a StaticPopup for an incoming invitation
-function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName)
+function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName, token)
     -- Register the popup dialog if not already done
     if not StaticPopupDialogs["ICC_INVITE_POPUP"] then
         StaticPopupDialogs["ICC_INVITE_POPUP"] = {
@@ -741,8 +778,8 @@ function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName)
                     messages = {},
                 }
 
-                -- Send accept reply
-                iCC:SendInviteReply(popupData.senderName, popupData.communityKey, true)
+                -- Send accept reply with security token
+                iCC:SendInviteReply(popupData.senderName, popupData.communityKey, true, nil, popupData.token)
                 iCC:Msg("You joined " .. iCC.Colors.iCC .. popupData.communityName .. iCC.Colors.Reset .. "!")
 
                 -- Start heartbeat if not already running
@@ -754,7 +791,7 @@ function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName)
             OnCancel = function(self)
                 local popupData = self.data
                 if not popupData then return end
-                iCC:SendInviteReply(popupData.senderName, popupData.communityKey, false)
+                iCC:SendInviteReply(popupData.senderName, popupData.communityKey, false, nil, popupData.token)
             end,
         }
     end
@@ -769,6 +806,7 @@ function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName)
             communityKey = communityKey,
             inviter = inviter,
             senderName = senderName,
+            token = token,
         }
     end
 end

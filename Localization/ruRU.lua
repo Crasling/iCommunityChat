@@ -60,6 +60,7 @@ L["CommunityDisbanded"] = Msg("Сообщество " .. Colors.iCC .. "%s" .. C
 L["CommunityJoined"] = Msg("Вы вступили в " .. Colors.iCC .. "%s" .. Colors.Reset .. "!") -- ИИ перевод
 L["CommunityLeft"] = Msg("Вы покинули " .. Colors.iCC .. "%s" .. Colors.Reset .. ".") -- ИИ перевод
 L["CommunityKicked"] = Msg("Вы были исключены из " .. Colors.iCC .. "%s" .. Colors.Reset .. ".") -- ИИ перевод
+L["CommunityName"] = Colors.iCC .. "Название сообщества" -- ИИ перевод
 L["CommunityNameEmpty"] = Msg(Colors.Red .. "Название сообщества не может быть пустым." .. Colors.Reset) -- ИИ перевод
 L["CommunityNameTooLong"] = Msg(Colors.Red .. "Название сообщества слишком длинное." .. Colors.Reset) -- ИИ перевод
 L["CommunityAlreadyExists"] = Msg(Colors.Red .. "Сообщество с таким названием уже существует." .. Colors.Reset) -- ИИ перевод

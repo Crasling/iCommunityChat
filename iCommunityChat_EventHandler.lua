@@ -53,13 +53,12 @@ end)
 -- │                       Clickable Community Link Handler                        │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
+local ICC_LINK_PREFIX = "garrMission:iCC:"
 local origSetItemRef = SetItemRef
 SetItemRef = function(link, text, button, chatFrame)
-    local linkType, communityKey = strsplit(":", link, 3)
-    if linkType == "garrMission" then
-        local prefix
-        prefix, communityKey = strsplit(":", link:sub(#linkType + 2))
-        if prefix == "iCC" and communityKey and iCCCommunities and iCCCommunities[communityKey] then
+    if link:sub(1, #ICC_LINK_PREFIX) == ICC_LINK_PREFIX then
+        local communityKey = link:sub(#ICC_LINK_PREFIX + 1)
+        if communityKey and communityKey ~= "" and iCCCommunities and iCCCommunities[communityKey] then
             iCC.State.ActiveCommunity = communityKey
 
             if not iCC.RosterFrame or not iCC.RosterFrame:IsShown() then
@@ -74,8 +73,8 @@ SetItemRef = function(link, text, button, chatFrame)
             if iCC.RosterFrame and iCC.RosterFrame.chatInput then
                 iCC.RosterFrame.chatInput:SetFocus()
             end
-            return
         end
+        return
     end
     return origSetItemRef(link, text, button, chatFrame)
 end

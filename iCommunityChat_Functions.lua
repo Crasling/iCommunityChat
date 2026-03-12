@@ -82,14 +82,27 @@ function iCC:MakeCommunityLink(communityName, communityKey)
 end
 
 -- Print a message to General (ChatFrame1) + enabled custom chat tabs
-function iCC:PrintToAllChatFrames(message)
+-- If communityKey is provided, use per-community ChatFrames settings
+-- Falls back to global iCCSettings.ChatFrames if no per-community setting
+function iCC:PrintToAllChatFrames(message, communityKey)
+    -- Get chat frame settings for this community
+    local enabledFrames
+    if communityKey and iCCCommunities and iCCCommunities[communityKey] then
+        enabledFrames = iCCCommunities[communityKey].chatFrames
+    end
+    if not enabledFrames then
+        enabledFrames = iCCSettings and iCCSettings.ChatFrames or {}
+    end
+
+    -- Check if muted (General disabled)
+    if enabledFrames.muted then return end
+
     -- Always write to General tab (ChatFrame1)
     if ChatFrame1 then
         ChatFrame1:AddMessage(message)
     end
 
-    -- Write to enabled custom tabs from settings
-    local enabledFrames = iCCSettings and iCCSettings.ChatFrames or {}
+    -- Write to enabled custom tabs
     for i = 2, NUM_CHAT_WINDOWS do
         if enabledFrames[i] then
             local chatFrame = _G["ChatFrame" .. i]
@@ -169,6 +182,17 @@ function iCC:GetRoleColor(role)
     else
         return iCC.Colors.Member
     end
+end
+
+-- Get custom rank display name for a role in a community
+function iCC:GetRankDisplayName(communityKey, role)
+    if communityKey and iCCCommunities[communityKey] then
+        local rankNames = iCCCommunities[communityKey].rankNames
+        if rankNames and rankNames[role] and rankNames[role] ~= "" then
+            return rankNames[role]
+        end
+    end
+    return role
 end
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮

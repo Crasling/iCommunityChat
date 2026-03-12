@@ -66,6 +66,18 @@ local function CreateRosterFrame()
     frame:SetScript("OnMouseUp", function(self) self:StopMovingOrSizing(); self:SetUserPlaced(true) end)
     frame:RegisterForDrag("LeftButton", "RightButton")
 
+    -- Capture Enter key to focus chat input when frame is shown
+    frame:EnableKeyboard(true)
+    frame:SetPropagateKeyboardInput(true)
+    frame:SetScript("OnKeyDown", function(self, key)
+        if key == "ENTER" and self.chatInput and not self.chatInput:HasFocus() then
+            self:SetPropagateKeyboardInput(false)
+            self.chatInput:SetFocus()
+        else
+            self:SetPropagateKeyboardInput(true)
+        end
+    end)
+
     -- ╭──────────────────────────╮
     -- │       Title Bar          │
     -- ╰──────────────────────────╯
@@ -631,7 +643,7 @@ local function ShowHoverPanel(row)
     panel.guildValue:SetText((member.guild and member.guild ~= "") and member.guild or "-")
 
     -- Rank (role-colored)
-    panel.rankValue:SetText(iCC:GetRoleColor(member.role) .. member.role .. iCC.Colors.Reset)
+    panel.rankValue:SetText(iCC:GetRoleColor(member.role) .. iCC:GetRankDisplayName(row.communityKey, member.role) .. iCC.Colors.Reset)
 
     -- Level
     panel.levelValue:SetText(tostring(member.level or "?"))
@@ -755,9 +767,13 @@ function iCC:UpdateRosterDisplay()
     local hasCommunities = (#communities > 0)
 
     if not communityKey or not iCCCommunities[communityKey] then
-        -- No active community — show empty state
+        -- No active community — show empty state, hide content frames
         iCC.RosterFrame.titleText:SetText(iCC.Colors.iCC .. "iCommunityChat" .. iCC.Colors.Reset)
-        iCC.RosterFrame.emptyPanel:SetShown(not hasCommunities)
+        local isEmpty = not hasCommunities
+        iCC.RosterFrame.emptyPanel:SetShown(isEmpty)
+        iCC.RosterFrame.infoBar:SetShown(not isEmpty)
+        iCC.RosterFrame.rosterPanel:SetShown(not isEmpty)
+        iCC.RosterFrame.chatBg:SetShown(not isEmpty)
         -- Hide all rows
         for _, row in ipairs(iCC.RosterFrame.rosterRows) do
             row:Hide()
@@ -765,8 +781,11 @@ function iCC:UpdateRosterDisplay()
         return
     end
 
-    -- Has active community — hide empty panel
+    -- Has active community — hide empty panel, show content frames
     iCC.RosterFrame.emptyPanel:Hide()
+    iCC.RosterFrame.infoBar:Show()
+    iCC.RosterFrame.rosterPanel:Show()
+    iCC.RosterFrame.chatBg:Show()
 
     -- Update title (always show addon name, community is visible in info bar)
     iCC.RosterFrame.titleText:SetText(iCC.Colors.iCC .. "iCommunityChat" .. iCC.Colors.Reset)
@@ -798,7 +817,7 @@ function iCC:UpdateRosterDisplay()
         row.nameText:SetText(iCC:ColorizePlayerNameByClass(name, member.class))
 
         -- Rank (colored by role)
-        row.rankText:SetText(iCC:GetRoleColor(member.role) .. member.role .. iCC.Colors.Reset)
+        row.rankText:SetText(iCC:GetRoleColor(member.role) .. iCC:GetRankDisplayName(communityKey, member.role) .. iCC.Colors.Reset)
 
         -- Guild
         row.guildText:SetText(member.guild or "")
@@ -954,6 +973,115 @@ function iCC:PopulateSettingsPanel()
     local children = frame._settingsChildren
 
     -- ╭──────────────────╮
+    -- │   Name Section   │
+    -- ╰──────────────────╯
+
+    local nameHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    nameHeader:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, y)
+    nameHeader:SetText(L["CommunityName"] or "Community Name")
+    children[#children + 1] = nameHeader
+    y = y - 20
+
+    if isLeader then
+        local nameBg = CreateFrame("Frame", nil, parent, iCC.BACKDROP_TEMPLATE)
+        nameBg:SetSize(380, 28)
+        nameBg:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+        nameBg:SetBackdrop({
+            bgFile = "Interface\\BUTTONS\\WHITE8x8",
+            edgeFile = "Interface\\BUTTONS\\WHITE8x8",
+            edgeSize = 1,
+        })
+        nameBg:SetBackdropColor(0.05, 0.05, 0.08, 1)
+        nameBg:SetBackdropBorderColor(0.4, 0.4, 0.5, 0.6)
+        children[#children + 1] = nameBg
+
+        local nameEdit = CreateFrame("EditBox", "iCCNameEdit", nameBg)
+        nameEdit:SetPoint("TOPLEFT", nameBg, "TOPLEFT", 6, -4)
+        nameEdit:SetPoint("BOTTOMRIGHT", nameBg, "BOTTOMRIGHT", -6, 4)
+        nameEdit:SetFontObject(GameFontHighlightSmall)
+        nameEdit:SetAutoFocus(false)
+        nameEdit:SetMaxLetters(iCC.CONSTANTS.MAX_COMMUNITY_NAME)
+        nameEdit:SetText(community.name or "")
+        nameEdit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+        nameEdit:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+        frame._nameEdit = nameEdit
+        children[#children + 1] = nameEdit
+
+        y = y - 34
+    else
+        local nameText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        nameText:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+        nameText:SetText(community.name or "")
+        children[#children + 1] = nameText
+        y = y - 18
+    end
+
+    -- ╭──────────────────╮
+    -- │  Rank Names      │
+    -- ╰──────────────────╯
+
+    local rankHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    rankHeader:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, y)
+    rankHeader:SetText("Rank Names")
+    children[#children + 1] = rankHeader
+    y = y - 20
+
+    local rankNames = community.rankNames or {}
+    local roles = {
+        { key = iCC.CONSTANTS.ROLE_LEADER, default = "Leader" },
+        { key = iCC.CONSTANTS.ROLE_OFFICER, default = "Officer" },
+        { key = iCC.CONSTANTS.ROLE_MEMBER, default = "Member" },
+    }
+
+    if isLeader then
+        frame._rankEdits = {}
+        for _, roleInfo in ipairs(roles) do
+            local label = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            label:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+            label:SetText(iCC:GetRoleColor(roleInfo.key) .. roleInfo.default .. ":|r")
+            label:SetWidth(60)
+            label:SetJustifyH("LEFT")
+            children[#children + 1] = label
+
+            local editBg = CreateFrame("Frame", nil, parent, iCC.BACKDROP_TEMPLATE)
+            editBg:SetSize(200, 22)
+            editBg:SetPoint("LEFT", label, "RIGHT", 6, 0)
+            editBg:SetBackdrop({
+                bgFile = "Interface\\BUTTONS\\WHITE8x8",
+                edgeFile = "Interface\\BUTTONS\\WHITE8x8",
+                edgeSize = 1,
+            })
+            editBg:SetBackdropColor(0.05, 0.05, 0.08, 1)
+            editBg:SetBackdropBorderColor(0.4, 0.4, 0.5, 0.6)
+            children[#children + 1] = editBg
+
+            local edit = CreateFrame("EditBox", nil, editBg)
+            edit:SetPoint("TOPLEFT", editBg, "TOPLEFT", 4, -3)
+            edit:SetPoint("BOTTOMRIGHT", editBg, "BOTTOMRIGHT", -4, 3)
+            edit:SetFontObject(GameFontHighlightSmall)
+            edit:SetAutoFocus(false)
+            edit:SetMaxLetters(20)
+            edit:SetText(rankNames[roleInfo.key] or roleInfo.default)
+            edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+            edit:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+            children[#children + 1] = edit
+
+            frame._rankEdits[roleInfo.key] = edit
+            y = y - 24
+        end
+    else
+        for _, roleInfo in ipairs(roles) do
+            local label = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            label:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+            label:SetText(iCC:GetRoleColor(roleInfo.key) .. roleInfo.default .. ": |r" .. (rankNames[roleInfo.key] or roleInfo.default))
+            children[#children + 1] = label
+            y = y - 16
+        end
+    end
+
+    y = y - 8
+
+    -- ╭──────────────────╮
     -- │   Icon Section   │
     -- ╰──────────────────╯
 
@@ -1102,19 +1230,102 @@ function iCC:PopulateSettingsPanel()
 
         y = y - 96
 
+        -- ╭──────────────────────────╮
+        -- │   Chat Output Section    │
+        -- ╰──────────────────────────╯
+
+        local chatHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        chatHeader:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, y)
+        chatHeader:SetText(L["SectionChatFrames"] or "Chat Output")
+        children[#children + 1] = chatHeader
+        y = y - 20
+
+        if not community.chatFrames then community.chatFrames = {} end
+
+        -- Mute toggle
+        local muteCb = CreateFrame("CheckButton", nil, parent, iCC.CHECKBOX_TEMPLATE or "InterfaceOptionsCheckButtonTemplate")
+        muteCb:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+        if not muteCb.Text then
+            muteCb.Text = muteCb:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            muteCb.Text:SetPoint("LEFT", muteCb, "RIGHT", 4, 0)
+        end
+        muteCb.Text:SetText("|cFFFF0000Mute|r — hide all chat output for this community")
+        muteCb:SetChecked(community.chatFrames.muted or false)
+        muteCb:SetScript("OnClick", function(self)
+            community.chatFrames.muted = self:GetChecked() and true or false
+        end)
+        children[#children + 1] = muteCb
+        y = y - 22
+
+        -- General (always on unless muted)
+        local genCb = CreateFrame("CheckButton", nil, parent, iCC.CHECKBOX_TEMPLATE or "InterfaceOptionsCheckButtonTemplate")
+        genCb:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+        if not genCb.Text then
+            genCb.Text = genCb:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            genCb.Text:SetPoint("LEFT", genCb, "RIGHT", 4, 0)
+        end
+        genCb.Text:SetText(iCC.Colors.Gray .. "General " .. (L["ChatFrameAlwaysOn"] or "(always on)") .. iCC.Colors.Reset)
+        genCb:SetChecked(true)
+        genCb:Disable()
+        children[#children + 1] = genCb
+        y = y - 22
+
+        -- Dynamic chat tab checkboxes
+        local skipTabs = { ["Combat Log"] = true, ["Voice"] = true }
+        frame._chatFrameCbs = {}
+        for i = 2, NUM_CHAT_WINDOWS do
+            local tabName = GetChatWindowInfo(i)
+            if tabName and tabName ~= "" and not skipTabs[tabName] then
+                local frameIndex = i
+                local cb = CreateFrame("CheckButton", nil, parent, iCC.CHECKBOX_TEMPLATE or "InterfaceOptionsCheckButtonTemplate")
+                cb:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
+                if not cb.Text then
+                    cb.Text = cb:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                    cb.Text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+                end
+                cb.Text:SetText(tabName)
+                cb:SetChecked(community.chatFrames[frameIndex] or false)
+                cb:SetScript("OnClick", function(self)
+                    community.chatFrames[frameIndex] = self:GetChecked() and true or false
+                end)
+                children[#children + 1] = cb
+                frame._chatFrameCbs[frameIndex] = cb
+                y = y - 22
+            end
+        end
+
+        y = y - 8
+
         -- Save Button
         local saveBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
         saveBtn:SetSize(120, 26)
         saveBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 14, y)
         saveBtn:SetText(L["SaveSettings"])
         saveBtn:SetScript("OnClick", function()
+            local newName = frame._nameEdit and frame._nameEdit:GetText() or community.name
+            if newName and newName ~= "" then
+                community.name = newName
+            end
             community.icon = iCC._selectedIcon
             community.description = frame._descEdit:GetText() or ""
             community.rules = frame._rulesEdit:GetText() or ""
 
+            -- Save custom rank names
+            if frame._rankEdits then
+                if not community.rankNames then community.rankNames = {} end
+                for roleKey, edit in pairs(frame._rankEdits) do
+                    local val = edit:GetText()
+                    if val and val ~= "" then
+                        community.rankNames[roleKey] = val
+                    end
+                end
+            end
+
             iCC:BroadcastSettingsChange(communityKey)
             iCC:Msg(L["SettingsSaved"])
             iCC:ToggleSettingsPanel()
+            iCC:UpdateCommunityTabs()
+            iCC:UpdateRosterDisplay()
         end)
         children[#children + 1] = saveBtn
 

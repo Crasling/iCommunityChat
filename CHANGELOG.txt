@@ -2,6 +2,42 @@
  iCommunityChat - Changelog
 ================================================================================
 
+v0.1.3 - Release
+--------------------------------------------------------------------------------
+
+ [NEW] Per-Character SavedVariables
+  - Settings and communities are now stored per character, not account-wide
+  - Alts must be independently invited to communities
+
+ [NEW] Invite Token Security
+  - Invitations now include a random security token
+  - Invite replies are validated against the token to prevent forged joins
+  - Pending invites expire after 120 seconds
+
+ [NEW] Community Settings
+  - Community name can be renamed by the leader
+  - Custom rank names for Leader, Officer, and Member roles
+  - Rank names synced to all members via settings broadcast
+
+ [NEW] Per-Community Chat Output
+  - Chat output tabs can be configured per community in settings
+  - Mute toggle to suppress all chat output for a specific community
+
+ [NEW] Enter Key Chat Focus
+  - Pressing Enter while iCC frame is open focuses the community chat input
+
+ [CHANGED] Empty State
+  - Chat and roster panels are hidden when no communities exist
+  - Clean empty state with centered Create Community button
+
+ [CHANGED] Invite Whisper
+  - Updated fallback whisper message for players without iCC installed
+
+ [FIX] Invite ack key mismatch — realm suffix caused whisper to always fire
+ [FIX] Clickable community links no longer trigger errors in other addons
+ [FIX] Missing locale entry for CommunityName
+ [FIX] Replaced broken TBC icon paths in community icon picker
+
 v0.1.2 - Release
 --------------------------------------------------------------------------------
 
