@@ -2,6 +2,17 @@
  iCommunityChat - Changelog
 ================================================================================
 
+v0.1.4 - Release
+--------------------------------------------------------------------------------
+
+ [FIX] Invite sync — invitee now sees full roster after accepting
+  - Inviter is added to local community immediately on accept
+  - Fallback sync request sent after 3 seconds if auto-sync doesn't arrive
+ [FIX] Invite whisper fallback timer increased from 5s to 15s
+  - AceComm message round-trip could exceed 5s, causing false "download" whispers
+ [FIX] Guild and rank data now included in roster sync responses
+ [FIX] Custom rank names included in roster sync for new members
+
 v0.1.3 - Release
 --------------------------------------------------------------------------------
 

@@ -272,14 +272,22 @@ function iCC:SendInvite(communityKey, targetPlayer)
     local inviterName = UnitName("player")
     local communityName = community.name
 
-    -- If no ack within 5s, target doesn't have the addon — send whisper fallback
-    C_Timer.After(5, function()
-        if iCC.PendingInvites[targetName] and not iCC.PendingInvites[targetName].acked then
-            SendChatMessage(
-                inviterName .. ' has invited you to join the community "' .. communityName .. '". Download "iCommunityChat" on CurseForge to join.',
-                "WHISPER", nil, targetPlayer
-            )
+    -- If no response within 30s, target likely doesn't have the addon — send whisper fallback
+    local cKey = communityKey
+    C_Timer.After(30, function()
+        local pending = iCC.PendingInvites and iCC.PendingInvites[targetName]
+        -- No whisper if: ack received, or pending was consumed (reply processed)
+        if not pending then return end
+        if pending.acked then return end
+        -- Also check if they already joined the roster (reply was processed but pending not yet cleared)
+        if iCCCommunities and iCCCommunities[cKey] then
+            local targetKey = iCC:VerifyRealm(targetPlayer)
+            if iCCCommunities[cKey].members[targetKey] then return end
         end
+        SendChatMessage(
+            inviterName .. ' has invited you to join the community "' .. communityName .. '". Download "iCommunityChat" on CurseForge to join.',
+            "WHISPER", nil, targetPlayer
+        )
     end)
 
     -- Expire pending invite after 120s to prevent stale entries
@@ -356,6 +364,7 @@ function iCC:SendInviteReply(targetPlayer, communityKey, accepted, reason, token
         accepted = accepted,
         class = classToken,
         level = level,
+        guild = GetGuildInfo("player") or "",
         reason = reason,
         token = token,
     }
@@ -592,6 +601,7 @@ function iCC:SendSyncResponse(targetPlayer, communityKey)
             joinedAt = member.joinedAt,
             class = member.class,
             level = member.level,
+            guild = member.guild,
             note = member.note,
         }
     end
@@ -608,6 +618,7 @@ function iCC:SendSyncResponse(targetPlayer, communityKey)
         icon = community.icon,
         description = community.description,
         rules = community.rules,
+        rankNames = community.rankNames,
     }
 
     local serialized = iCC:Serialize(data)
@@ -630,7 +641,27 @@ function iCC:OnSyncMessage(prefix, message, distribution, sender)
 
     if data.action == "request" then
         -- Someone is requesting our roster
-        if not ValidateSender(communityKey, senderKey) then return end
+        local senderName = strsplit("-", sender)
+        local hasPendingInvite = iCC.PendingInvites and iCC.PendingInvites[senderName]
+
+        if not ValidateSender(communityKey, senderKey) then
+            -- If they have a pending invite for this community, accept them first
+            if hasPendingInvite and hasPendingInvite.communityKey == communityKey then
+                iCC:DebugMsg("Sync request from pending invitee " .. senderName .. " — adding to roster", 2)
+                local ok = iCC:AddMember(communityKey, senderKey, data.class, data.level, data.guild)
+                if ok then
+                    iCC.PendingInvites[senderName] = nil
+                    local name = strsplit("-", senderKey)
+                    iCC:Msg(iCC:ColorizePlayerNameByClass(name, data.class or "UNKNOWN") .. " joined the community!")
+                    iCC:BroadcastRosterChange(communityKey, "add", senderKey, data)
+                    iCC:SendMessage("ICC_ROSTER_UPDATED", communityKey)
+                else
+                    return
+                end
+            else
+                return
+            end
+        end
 
         -- Only respond if our version is higher
         local community = iCCCommunities[communityKey]
@@ -770,6 +801,18 @@ function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName, t
                             joinedAt = time(),
                             class = classToken,
                             level = level,
+                            guild = GetGuildInfo("player") or "",
+                            lastSeen = time(),
+                            online = true,
+                            note = "",
+                        },
+                        -- Add inviter so we can request sync from them
+                        [popupData.inviter] = {
+                            role = iCC.CONSTANTS.ROLE_LEADER,
+                            joinedAt = time(),
+                            class = "UNKNOWN",
+                            level = 0,
+                            guild = "",
                             lastSeen = time(),
                             online = true,
                             note = "",
@@ -784,6 +827,29 @@ function iCC:ShowInvitePopup(communityName, inviter, communityKey, senderName, t
 
                 -- Start heartbeat if not already running
                 iCC:StartHeartbeatTimer()
+
+                -- Fallback: request sync from inviter after delay
+                -- Include our info so leader can add us if the reply was lost
+                local inviterWhisper = strsplit("-", popupData.senderName)
+                local cKey = popupData.communityKey
+                local myClass = classToken
+                local myLevel = level
+                local myGuild = GetGuildInfo("player") or ""
+                C_Timer.After(3, function()
+                    if iCCCommunities[cKey] then
+                        local syncData = {
+                            communityKey = cKey,
+                            action = "request",
+                            rosterVersion = iCCCommunities[cKey].rosterVersion,
+                            class = myClass,
+                            level = myLevel,
+                            guild = myGuild,
+                        }
+                        local serialized = iCC:Serialize(syncData)
+                        iCC:SendCommMessage("iCCSync", serialized, "WHISPER", inviterWhisper)
+                        iCC:DebugMsg("Fallback sync request sent to " .. inviterWhisper, 3)
+                    end
+                end)
 
                 -- Notify UI
                 iCC:SendMessage("ICC_ROSTER_UPDATED", popupData.communityKey)

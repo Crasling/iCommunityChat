@@ -407,6 +407,7 @@ function iCC:ApplyRosterSync(communityKey, syncData)
                 joinedAt = memberData.joinedAt or (existing and existing.joinedAt) or time(),
                 class = memberData.class or (existing and existing.class) or "UNKNOWN",
                 level = memberData.level or (existing and existing.level) or 0,
+                guild = memberData.guild or (existing and existing.guild) or "",
                 lastSeen = (existing and existing.lastSeen) or 0,
                 online = (existing and existing.online) or false,
                 note = memberData.note or (existing and existing.note) or "",
@@ -425,6 +426,7 @@ function iCC:ApplyRosterSync(communityKey, syncData)
     if syncData.icon ~= nil then community.icon = syncData.icon end
     if syncData.description then community.description = syncData.description end
     if syncData.rules then community.rules = syncData.rules end
+    if syncData.rankNames then community.rankNames = syncData.rankNames end
 
     community.rosterVersion = syncData.rosterVersion
     iCC:DebugMsg("Applied roster sync for " .. communityKey .. " (v" .. syncData.rosterVersion .. ")", 3)
