@@ -239,7 +239,7 @@ end
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
 -- Update a member's online info (called on heartbeat receive)
-function iCC:UpdateMemberStatus(communityKey, memberKey, class, level, guild)
+function iCC:UpdateMemberStatus(communityKey, memberKey, class, level, guild, zone)
     if not iCCCommunities or not iCCCommunities[communityKey] then return end
 
     local member = iCCCommunities[communityKey].members[memberKey]
@@ -250,6 +250,7 @@ function iCC:UpdateMemberStatus(communityKey, memberKey, class, level, guild)
     if class then member.class = class end
     if level then member.level = level end
     if guild then member.guild = guild end
+    if zone then member.zone = zone end
 end
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮

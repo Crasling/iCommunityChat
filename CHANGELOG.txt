@@ -2,6 +2,18 @@
  iCommunityChat - Changelog
 ================================================================================
 
+v0.2.2 - Release
+--------------------------------------------------------------------------------
+
+ [NEW] Zone column replaces Level in roster display
+  - Player's own zone and matching zones shown in green
+  - Level moved to hover panel only
+ [NEW] Zone change triggers heartbeat update after 2 seconds
+ [CHANGED] Scrollbars hidden on roster and chat frames
+  - Mouse wheel scrolling replaces visible scrollbar
+  - Scroll area uses full panel width
+ [FIX] /cc mode — whisper fallback timer reduced to 10 seconds
+
 v0.2.1 - Release
 --------------------------------------------------------------------------------
 

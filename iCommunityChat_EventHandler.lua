@@ -80,6 +80,25 @@ SetItemRef = function(link, text, button, chatFrame)
 end
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
+-- │                        Zone Change — Heartbeat Update                         │
+-- ╰────────────────────────────────────────────────────────────────────────────────╯
+
+local zoneChangeFrame = CreateFrame("Frame")
+zoneChangeFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+
+local zoneHeartbeatPending = false
+zoneChangeFrame:SetScript("OnEvent", function()
+    if zoneHeartbeatPending then return end
+    zoneHeartbeatPending = true
+    C_Timer.After(2, function()
+        zoneHeartbeatPending = false
+        if iCC.SendHeartbeat then
+            iCC:SendHeartbeat()
+        end
+    end)
+end)
+
+-- ╭────────────────────────────────────────────────────────────────────────────────╮
 -- │                           Player Login (Delayed)                               │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 

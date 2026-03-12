@@ -264,33 +264,47 @@ local function CreateRosterFrame()
 
     local guildHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     guildHeader:SetPoint("LEFT", rosterHeader, "LEFT", 96, 0)
-    guildHeader:SetWidth(78)
+    guildHeader:SetWidth(110)
     guildHeader:SetJustifyH("CENTER")
-    guildHeader:SetText("Guild")
+    guildHeader:SetText("Zone")
     guildHeader:SetTextColor(1, 0.82, 0, 1)
 
     local rankHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankHeader:SetPoint("LEFT", rosterHeader, "LEFT", 178, 0)
+    rankHeader:SetPoint("LEFT", rosterHeader, "LEFT", 210, 0)
     rankHeader:SetWidth(50)
     rankHeader:SetJustifyH("CENTER")
     rankHeader:SetText("Rank")
     rankHeader:SetTextColor(1, 0.82, 0, 1)
 
-    local levelHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelHeader:SetPoint("LEFT", rosterHeader, "LEFT", 232, 0)
-    levelHeader:SetWidth(24)
-    levelHeader:SetJustifyH("CENTER")
-    levelHeader:SetText("Lvl")
-    levelHeader:SetTextColor(1, 0.82, 0, 1)
-
     local rosterScroll = CreateFrame("ScrollFrame", "iCCRosterScroll", rosterPanel, "UIPanelScrollFrameTemplate")
     rosterScroll:SetPoint("TOPLEFT", rosterHeader, "BOTTOMLEFT", 0, -2)
-    rosterScroll:SetPoint("BOTTOMRIGHT", rosterPanel, "BOTTOMRIGHT", -22, 4)
+    rosterScroll:SetPoint("BOTTOMRIGHT", rosterPanel, "BOTTOMRIGHT", -4, 4)
 
     local scrollChild = CreateFrame("Frame", nil, rosterScroll)
-    scrollChild:SetWidth(rosterScroll:GetWidth() or (ROSTER_PANEL_WIDTH - 30))
+    scrollChild:SetWidth(rosterScroll:GetWidth() or (ROSTER_PANEL_WIDTH - 12))
     scrollChild:SetHeight(1)
     rosterScroll:SetScrollChild(scrollChild)
+
+    -- Hide scrollbar but keep scroll functionality
+    local scrollBar = rosterScroll.ScrollBar or _G["iCCRosterScrollScrollBar"]
+    if scrollBar then
+        scrollBar:SetAlpha(0)
+        scrollBar:SetWidth(1)
+        scrollBar:EnableMouse(false)
+    end
+
+    -- Mouse wheel scrolling
+    rosterScroll:EnableMouseWheel(true)
+    rosterScroll:SetScript("OnMouseWheel", function(self, delta)
+        local current = self:GetVerticalScroll()
+        local maxScroll = self:GetVerticalScrollRange()
+        local step = 60 -- 3 rows per tick
+        local newScroll = current - (delta * step)
+        if newScroll < 0 then newScroll = 0 end
+        if newScroll > maxScroll then newScroll = maxScroll end
+        self:SetVerticalScroll(newScroll)
+    end)
+
     frame.scrollChild = scrollChild
     frame.rosterRows = {}
 
@@ -313,12 +327,32 @@ local function CreateRosterFrame()
 
     local chatScroll = CreateFrame("ScrollFrame", "iCCChatScroll", chatBg, "UIPanelScrollFrameTemplate")
     chatScroll:SetPoint("TOPLEFT", chatBg, "TOPLEFT", 6, -6)
-    chatScroll:SetPoint("BOTTOMRIGHT", chatBg, "BOTTOMRIGHT", -24, 30)
+    chatScroll:SetPoint("BOTTOMRIGHT", chatBg, "BOTTOMRIGHT", -4, 30)
 
     local chatMessages = CreateFrame("Frame", nil, chatScroll)
     chatMessages:SetWidth(chatScroll:GetWidth() or 300)
     chatMessages:SetHeight(1)
     chatScroll:SetScrollChild(chatMessages)
+
+    -- Hide scrollbar but keep scroll functionality
+    local chatScrollBar = chatScroll.ScrollBar or _G["iCCChatScrollScrollBar"]
+    if chatScrollBar then
+        chatScrollBar:SetAlpha(0)
+        chatScrollBar:SetWidth(1)
+        chatScrollBar:EnableMouse(false)
+    end
+
+    -- Mouse wheel scrolling
+    chatScroll:EnableMouseWheel(true)
+    chatScroll:SetScript("OnMouseWheel", function(self, delta)
+        local current = self:GetVerticalScroll()
+        local maxScroll = self:GetVerticalScrollRange()
+        local step = 60
+        local newScroll = current - (delta * step)
+        if newScroll < 0 then newScroll = 0 end
+        if newScroll > maxScroll then newScroll = maxScroll end
+        self:SetVerticalScroll(newScroll)
+    end)
 
     local chatText = chatMessages:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     chatText:SetPoint("TOPLEFT", chatMessages, "TOPLEFT", 0, 0)
@@ -613,6 +647,7 @@ local function GetOrCreateHoverPanel()
     end
 
     panel.guildValue = MakeLabel("Guild:")
+    panel.zoneValue = MakeLabel("Zone:")
     panel.rankValue = MakeLabel("Rank:")
     panel.levelValue = MakeLabel("Level:")
     panel.statusValue = MakeLabel("Status:")
@@ -641,6 +676,9 @@ local function ShowHoverPanel(row)
 
     -- Guild
     panel.guildValue:SetText((member.guild and member.guild ~= "") and member.guild or "-")
+
+    -- Zone
+    panel.zoneValue:SetText((member.zone and member.zone ~= "") and member.zone or "-")
 
     -- Rank (role-colored)
     panel.rankValue:SetText(iCC:GetRoleColor(member.role) .. iCC:GetRankDisplayName(row.communityKey, member.role) .. iCC.Colors.Reset)
@@ -713,28 +751,21 @@ local function CreateRosterRow(parent, index)
     nameText:SetWordWrap(false)
     row.nameText = nameText
 
-    -- Guild
-    local guildText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    guildText:SetPoint("LEFT", row, "LEFT", 96, 0)
-    guildText:SetWidth(78)
-    guildText:SetJustifyH("CENTER")
-    guildText:SetWordWrap(false)
-    guildText:SetTextColor(0.5, 0.5, 0.5, 1)
-    row.guildText = guildText
+    -- Zone
+    local zoneText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    zoneText:SetPoint("LEFT", row, "LEFT", 96, 0)
+    zoneText:SetWidth(110)
+    zoneText:SetJustifyH("CENTER")
+    zoneText:SetWordWrap(false)
+    zoneText:SetTextColor(0.5, 0.5, 0.5, 1)
+    row.zoneText = zoneText
 
     -- Rank
     local rankText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankText:SetPoint("LEFT", row, "LEFT", 178, 0)
+    rankText:SetPoint("LEFT", row, "LEFT", 210, 0)
     rankText:SetWidth(50)
     rankText:SetJustifyH("CENTER")
     row.rankText = rankText
-
-    -- Level
-    local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelText:SetPoint("LEFT", row, "LEFT", 232, 0)
-    levelText:SetWidth(24)
-    levelText:SetJustifyH("CENTER")
-    row.levelText = levelText
 
     -- Hover panel
     row:SetScript("OnEnter", function(self)
@@ -819,11 +850,15 @@ function iCC:UpdateRosterDisplay()
         -- Rank (colored by role)
         row.rankText:SetText(iCC:GetRoleColor(member.role) .. iCC:GetRankDisplayName(communityKey, member.role) .. iCC.Colors.Reset)
 
-        -- Guild
-        row.guildText:SetText(member.guild or "")
-
-        -- Level
-        row.levelText:SetText(tostring(member.level or "?"))
+        -- Zone (green if same zone as player)
+        local zoneStr = member.zone or ""
+        local myZone = GetRealZoneText() or ""
+        if zoneStr ~= "" and zoneStr == myZone then
+            row.zoneText:SetTextColor(0, 1, 0, 1)
+        else
+            row.zoneText:SetTextColor(0.5, 0.5, 0.5, 1)
+        end
+        row.zoneText:SetText(zoneStr)
 
         -- Store references for context menu
         row.memberKey = memberKey

@@ -176,6 +176,7 @@ function iCC:SendHeartbeat()
     local _, classToken = UnitClass("player")
     local level = UnitLevel("player")
     local guildName = GetGuildInfo("player") or ""
+    local zone = GetRealZoneText() or ""
 
     for communityKey, community in pairs(iCCCommunities) do
         local data = {
@@ -184,6 +185,7 @@ function iCC:SendHeartbeat()
             class = classToken,
             level = level,
             guild = guildName,
+            zone = zone,
         }
 
         iCC:BroadcastToCommunity("iCCHeartbeat", data, communityKey, false)
@@ -195,6 +197,7 @@ function iCC:SendHeartbeat()
             community.members[playerKey].class = classToken
             community.members[playerKey].level = level
             community.members[playerKey].guild = guildName
+            community.members[playerKey].zone = zone
         end
 
         -- Check timeouts
@@ -225,7 +228,7 @@ function iCC:OnHeartbeat(prefix, message, distribution, sender)
         wasOffline = true
     end
 
-    iCC:UpdateMemberStatus(communityKey, senderKey, data.class, data.level, data.guild)
+    iCC:UpdateMemberStatus(communityKey, senderKey, data.class, data.level, data.guild, data.zone)
 
     -- Notify UI if status changed
     if wasOffline then
