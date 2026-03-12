@@ -2,6 +2,32 @@
  iCommunityChat - Changelog
 ================================================================================
 
+v0.2.0 - Release
+--------------------------------------------------------------------------------
+
+ [NEW] Sticky Community Chat Mode (/cc)
+  - Type /cc to enter community chat mode — works like /g for guild chat
+  - Messages sent directly in the chat edit box without opening the roster window
+  - Chat tab renamed to the active community name while in mode
+  - Custom edit box header shows community name in iCC color
+  - Typed text displayed in iCC color
+  - /cc toggles mode on/off instantly on space (like /g, /s)
+  - /cc <message> sends a quick message without entering sticky mode
+  - Typing /s, /g, /p, /w etc. automatically exits community chat mode
+
+ [CHANGED] Chat Output Format
+  - Messages now display as [Community] [Player]: message
+  - Brackets around player name colored in iCC orange
+
+ [CHANGED] System Messages
+  - All iCC system messages now route to all enabled chat frames
+  - Previously only displayed in General chat
+
+ [FIX] PendingInvites case mismatch — user input vs AceComm sender name
+  - All PendingInvites keys normalized to lowercase
+ [FIX] Whisper fallback now also checks roster membership before sending
+ [FIX] Fallback sync request auto-adds pending invitees if reply was lost
+
 v0.1.4 - Release
 --------------------------------------------------------------------------------
 

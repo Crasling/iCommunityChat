@@ -72,8 +72,8 @@ function iCC:DebugMsg(message, level)
 end
 
 -- Print a standard addon message to chat
-function iCC:Msg(message)
-    print(iCC.Colors.iCC .. "[iCC]: |r" .. message)
+function iCC:Msg(message, communityKey)
+    iCC:PrintToAllChatFrames(iCC.Colors.iCC .. "[iCC]:|r " .. message, communityKey)
 end
 
 -- Build a clickable community name link for chat output
@@ -82,6 +82,196 @@ function iCC:MakeCommunityLink(communityName, communityKey)
 end
 
 -- Print a message to General (ChatFrame1) + enabled custom chat tabs
+-- ╭────────────────────────────────────────────────────────────────────────────────╮
+-- │                            Sticky Chat Mode                                  │
+-- ╰────────────────────────────────────────────────────────────────────────────────╯
+
+-- Store the original chat tab name so we can restore it
+local originalTabName = nil
+local originalTextInsets = nil
+
+-- Apply the community header to the chat edit box
+local function ApplyChatModeHeader()
+    if not iCC.State.ChatMode or not iCC.State.ChatModeCommunity then return end
+    local community = iCCCommunities[iCC.State.ChatModeCommunity]
+    if not community then return end
+
+    local editBox = ChatFrame1EditBox
+    if not originalTextInsets then
+        local l, r, t, b = editBox:GetTextInsets()
+        originalTextInsets = { l, r, t, b }
+    end
+    editBox:SetAttribute("chatType", "SAY")
+    editBox.header:SetText(iCC.Colors.iCC .. community.name .. ":|r ")
+    editBox.header:SetTextColor(1, 0.59, 0.09)
+    editBox:SetTextColor(1, 0.59, 0.09)
+    editBox:SetTextInsets(editBox.header:GetStringWidth() + 15, 0, 0, 0)
+end
+
+-- Enter "sticky" community chat mode — like /g for guild chat
+-- Renames the chat tab, replaces the edit box header, and intercepts messages.
+-- Mode persists until explicitly exited with /s, /g, /p, /w, or /cc toggle.
+function iCC:EnterChatMode(communityKey)
+    if not communityKey or not iCCCommunities[communityKey] then return end
+
+    iCC.State.ChatMode = true
+    iCC.State.ChatModeCommunity = communityKey
+
+    local communityName = iCCCommunities[communityKey].name or communityKey
+
+    -- Rename the chat tab to the community name
+    local tab = _G["ChatFrame1Tab"]
+    if tab then
+        if not originalTabName then
+            originalTabName = tab:GetText()
+        end
+        tab:SetText(iCC.Colors.iCC .. communityName .. "|r")
+    end
+
+    iCC:Msg("Community chat mode " .. iCC.Colors.Green .. "on|r: " .. iCC.Colors.iCC .. communityName .. "|r", communityKey)
+
+    -- Open the chat edit box after a frame delay (slash command closes it otherwise)
+    C_Timer.After(0, function()
+        if not iCC.State.ChatMode then return end
+        ChatFrame_OpenChat("", ChatFrame1)
+        ApplyChatModeHeader()
+    end)
+end
+
+-- Exit sticky chat mode and restore the chat tab name
+function iCC:ExitChatMode()
+    iCC.State.ChatMode = false
+    iCC.State.ChatModeCommunity = nil
+
+    -- Restore original tab name
+    local tab = _G["ChatFrame1Tab"]
+    if tab and originalTabName then
+        tab:SetText(originalTabName)
+        originalTabName = nil
+    end
+
+    -- Restore original text color and insets
+    local editBox = ChatFrame1EditBox
+    editBox:SetTextColor(1, 1, 1)
+    if originalTextInsets then
+        editBox:SetTextInsets(unpack(originalTextInsets))
+        originalTextInsets = nil
+    end
+end
+
+-- Install the OnEnterPressed hook — called once from OnEnable
+function iCC:InstallChatModeHook()
+    local editBox = ChatFrame1EditBox
+    local origOnEnterPressed = editBox:GetScript("OnEnterPressed")
+
+    editBox:SetScript("OnEnterPressed", function(self)
+        if iCC.State.ChatMode then
+            local text = self:GetText()
+
+            -- If text starts with /, exit chat mode and let WoW handle it
+            if text and text:sub(1, 1) == "/" then
+                iCC:ExitChatMode()
+                if origOnEnterPressed then
+                    origOnEnterPressed(self)
+                end
+                return
+            end
+
+            -- Send non-slash text to the community
+            if text and text ~= "" then
+                local cKey = iCC.State.ChatModeCommunity
+                if cKey and iCCCommunities[cKey] then
+                    iCC:SendChatMessage(cKey, text)
+                end
+            end
+
+            -- Close edit box normally (like WoW default)
+            self:SetText("")
+            self:ClearFocus()
+            return
+        end
+
+        -- Not in chat mode — call original handler
+        if origOnEnterPressed then
+            origOnEnterPressed(self)
+        end
+    end)
+
+    -- When edit box opens (user presses Enter), re-apply header if in chat mode
+    editBox:HookScript("OnShow", function()
+        if iCC.State.ChatMode then
+            C_Timer.After(0, function()
+                ApplyChatModeHeader()
+            end)
+        end
+    end)
+
+    -- Detect slash commands typed in the edit box
+    editBox:HookScript("OnTextChanged", function(self, userInput)
+        if not userInput then return end
+        local text = self:GetText()
+
+        -- /cc typed while NOT in chat mode — activate immediately (like /g, /s)
+        if not iCC.State.ChatMode and text then
+            local lower = text:lower()
+            if lower == "/cc " then
+                self:SetText("")
+                -- Resolve community
+                local communityKey = iCC.State.ActiveCommunity
+                if not communityKey then
+                    local communities = iCC:GetMyCommunities()
+                    if #communities > 0 then
+                        communityKey = communities[1].key
+                        iCC.State.ActiveCommunity = communityKey
+                    end
+                end
+                if communityKey and iCCCommunities[communityKey] then
+                    iCC.State.ChatMode = true
+                    iCC.State.ChatModeCommunity = communityKey
+                    local communityName = iCCCommunities[communityKey].name or communityKey
+                    local tab = _G["ChatFrame1Tab"]
+                    if tab then
+                        if not originalTabName then originalTabName = tab:GetText() end
+                        tab:SetText(iCC.Colors.iCC .. communityName .. "|r")
+                    end
+                    ApplyChatModeHeader()
+                    iCC:Msg("Community chat mode " .. iCC.Colors.Green .. "on|r: " .. iCC.Colors.iCC .. communityName .. "|r", communityKey)
+                else
+                    iCC:Msg("No community to chat in.")
+                end
+                return
+            end
+        end
+
+        -- /cc typed while IN chat mode — toggle off
+        if iCC.State.ChatMode and text then
+            local lower = text:lower()
+            if lower == "/cc " then
+                self:SetText("")
+                local cKey = iCC.State.ChatModeCommunity
+                iCC:ExitChatMode()
+                iCC:Msg("Community chat mode " .. iCC.Colors.Red .. "off|r.", cKey)
+                return
+            end
+        end
+
+        -- In chat mode — detect when WoW processes a slash command and exit
+        if iCC.State.ChatMode then
+            -- WoW changed chat type to something other than SAY (e.g. /g, /p, /w)
+            if self.chatType and self.chatType ~= "SAY" then
+                iCC:ExitChatMode()
+                return
+            end
+            -- WoW processed /s — chatType is still SAY but WoW rewrote the header
+            local headerText = self.header and self.header:GetText() or ""
+            local community = iCCCommunities[iCC.State.ChatModeCommunity]
+            if community and not headerText:find(community.name, 1, true) then
+                iCC:ExitChatMode()
+            end
+        end
+    end)
+end
+
 -- If communityKey is provided, use per-community ChatFrames settings
 -- Falls back to global iCCSettings.ChatFrames if no per-community setting
 function iCC:PrintToAllChatFrames(message, communityKey)

@@ -115,7 +115,7 @@ function iCC:SendChatMessage(communityKey, text)
     local communityName = iCCCommunities[communityKey] and iCCCommunities[communityKey].name or communityKey
     local playerName = strsplit("-", playerKey)
     local _, classToken = UnitClass("player")
-    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(playerName, classToken) .. ": |r" .. text, communityKey)
+    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC.Colors.iCC .. "[" .. iCC:ColorizePlayerNameByClass(playerName, classToken) .. iCC.Colors.iCC .. "]:|r " .. text, communityKey)
 
     -- Fire callback so Frames can update the chat display
     iCC:SendMessage("ICC_CHAT_MESSAGE_RECEIVED", communityKey)
@@ -153,7 +153,7 @@ function iCC:OnChatMessage(prefix, message, distribution, sender)
     local communityName = iCCCommunities[communityKey] and iCCCommunities[communityKey].name or communityKey
     local senderName = strsplit("-", senderKey)
     local senderClass = iCCCommunities[communityKey].members[senderKey] and iCCCommunities[communityKey].members[senderKey].class or "UNKNOWN"
-    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(senderName, senderClass) .. ": |r" .. data.text, communityKey)
+    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC.Colors.iCC .. "[" .. iCC:ColorizePlayerNameByClass(senderName, senderClass) .. iCC.Colors.iCC .. "]:|r " .. data.text, communityKey)
 
     -- Fire callback for UI
     iCC:SendMessage("ICC_CHAT_MESSAGE_RECEIVED", communityKey)
@@ -262,9 +262,9 @@ function iCC:SendInvite(communityKey, targetPlayer)
     iCC:Msg("Invitation sent to " .. iCC.Colors.iCC .. targetPlayer .. iCC.Colors.Reset .. ".")
     iCC:DebugMsg("Invite sent to " .. targetPlayer .. " for " .. communityKey, 3)
 
-    -- Track pending invite with security token
+    -- Track pending invite with security token (lowercase key for case-insensitive lookup)
     iCC.PendingInvites = iCC.PendingInvites or {}
-    local targetName = strsplit("-", targetPlayer)
+    local targetName = string.lower(strsplit("-", targetPlayer))
     iCC.PendingInvites[targetName] = {
         token = token,
         communityKey = communityKey,
@@ -301,7 +301,7 @@ end
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
 function iCC:OnInviteAck(prefix, message, distribution, sender)
-    local senderName = strsplit("-", sender)
+    local senderName = string.lower(strsplit("-", sender))
     if iCC.PendingInvites and iCC.PendingInvites[senderName] then
         iCC.PendingInvites[senderName].acked = true
     end
@@ -386,8 +386,8 @@ function iCC:OnInviteReply(prefix, message, distribution, sender)
     local communityKey = data.communityKey
     local senderKey = data.sender or iCC:VerifyRealm(sender)
 
-    -- Validate invite token
-    local senderName = strsplit("-", sender)
+    -- Validate invite token (lowercase key for case-insensitive lookup)
+    local senderName = string.lower(strsplit("-", sender))
     local pending = iCC.PendingInvites and iCC.PendingInvites[senderName]
     if not pending then
         iCC:DebugMsg("Invite reply rejected: no pending invite for " .. senderName, 2)
@@ -641,7 +641,7 @@ function iCC:OnSyncMessage(prefix, message, distribution, sender)
 
     if data.action == "request" then
         -- Someone is requesting our roster
-        local senderName = strsplit("-", sender)
+        local senderName = string.lower(strsplit("-", sender))
         local hasPendingInvite = iCC.PendingInvites and iCC.PendingInvites[senderName]
 
         if not ValidateSender(communityKey, senderKey) then

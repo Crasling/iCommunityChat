@@ -262,12 +262,69 @@ function iCC:OnEnable()
             print("  /icc invite <player> — Invite a player")
             print("  /icc leave — Leave the active community")
             print("  /icc settings — Open settings")
+            print("  /cc — Enter community chat mode (sticky, like /g)")
+            print("  /cc <text> — Send a message to the active community")
             print("  /icc help — Show this help")
 
         else
             iCC:Msg("Unknown command. Type /icc help for usage.")
         end
     end
+
+    -- ╭────────────────────────────────────────╮
+    -- │      Community Chat: /cc Command       │
+    -- ╰────────────────────────────────────────╯
+
+    SLASH_ICCCHAT1 = "/cc"
+    SlashCmdList["ICCCHAT"] = function(msg)
+        -- Resolve active community (or default to first)
+        local communityKey = iCC.State.ActiveCommunity
+        if not communityKey then
+            local communities = iCC:GetMyCommunities()
+            if #communities > 0 then
+                communityKey = communities[1].key
+                iCC.State.ActiveCommunity = communityKey
+            else
+                iCC:Msg("No community to chat in.")
+                return
+            end
+        end
+        if not iCCCommunities[communityKey] then
+            iCC:Msg("No community to chat in.")
+            return
+        end
+
+        if msg and msg ~= "" then
+            -- Quick send: /cc hello world
+            iCC:SendChatMessage(communityKey, msg)
+        else
+            -- Toggle sticky chat mode
+            if iCC.State.ChatMode then
+                local cKey = iCC.State.ChatModeCommunity
+                iCC:ExitChatMode()
+                iCC:Msg("Community chat mode " .. iCC.Colors.Red .. "off|r.", cKey)
+            else
+                iCC:EnterChatMode(communityKey)
+            end
+        end
+    end
+
+    -- ╭────────────────────────────────────────╮
+    -- │      Sticky Chat Mode Hooks            │
+    -- ╰────────────────────────────────────────╯
+
+    iCC.State.ChatMode = false
+    iCC.State.ChatModeCommunity = nil
+
+    -- Install the edit box interception hook (replaces OnEnterPressed)
+    iCC:InstallChatModeHook()
+
+    -- Detect when user changes chat type (typing /s, /g, /p, etc.) — exit ICC mode
+    hooksecurefunc("ChatEdit_UpdateHeader", function(editBox)
+        if iCC.State.ChatMode and editBox.chatType ~= "SAY" then
+            iCC:ExitChatMode()
+        end
+    end)
 
     -- ╭────────────────────────────────────────╮
     -- │          Welcome Message               │
