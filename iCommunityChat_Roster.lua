@@ -73,6 +73,7 @@ function iCC:CreateCommunity(name)
                 joinedAt = now,
                 class = classToken,
                 level = level,
+                guild = GetGuildInfo("player") or "",
                 lastSeen = now,
                 online = true,
                 note = "",
@@ -113,7 +114,7 @@ end
 
 -- Add a member to a community roster.
 -- Called when an invite is accepted (locally or via comm).
-function iCC:AddMember(communityKey, memberKey, class, level)
+function iCC:AddMember(communityKey, memberKey, class, level, guild)
     if not iCCCommunities[communityKey] then
         return false, "Community not found."
     end
@@ -139,6 +140,7 @@ function iCC:AddMember(communityKey, memberKey, class, level)
         joinedAt = time(),
         class = class or "UNKNOWN",
         level = level or 0,
+        guild = guild or "",
         lastSeen = time(),
         online = true,
         note = "",
@@ -237,7 +239,7 @@ end
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
 -- Update a member's online info (called on heartbeat receive)
-function iCC:UpdateMemberStatus(communityKey, memberKey, class, level)
+function iCC:UpdateMemberStatus(communityKey, memberKey, class, level, guild)
     if not iCCCommunities or not iCCCommunities[communityKey] then return end
 
     local member = iCCCommunities[communityKey].members[memberKey]
@@ -247,6 +249,7 @@ function iCC:UpdateMemberStatus(communityKey, memberKey, class, level)
     member.online = true
     if class then member.class = class end
     if level then member.level = level end
+    if guild then member.guild = guild end
 end
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮

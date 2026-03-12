@@ -2,6 +2,40 @@
  iCommunityChat - Changelog
 ================================================================================
 
+v0.1.2 - Release
+--------------------------------------------------------------------------------
+
+ [NEW] Retail-Style Layout
+  - Main frame restructured to match retail Guild & Communities panel
+  - Sidebar with community icons (32x32) + name per tab
+  - Chat panel fills center area, roster panel on the right side
+  - Info bar showing community name and online count
+  - Selected community icon displayed at top of sidebar (48x48)
+
+ [NEW] Roster Enhancements
+  - Guild column added to roster display
+  - Guild data synced via heartbeat and stored per member
+  - Rank and Level columns in right-side roster panel
+  - Custom hover panel on roster rows showing member details
+
+ [NEW] Clickable Community Links
+  - Community name in chat output is now a clickable link
+  - Clicking opens iCC, switches to that community, and focuses chat input
+
+ [CHANGED] Community Icon Picker
+  - Updated to 48 TBC-safe icons (replaced broken paths)
+  - Grid fills 6 complete rows of 8 icons
+
+ [CHANGED] Context Menu
+  - Removed "Create Note (iWR)" from roster right-click menu
+
+ [CHANGED] Combat Handling
+  - UI can now be opened during combat
+  - Auto-closes when entering combat (unchanged)
+
+ [FIX] SendWho replaced with C_FriendList.SendWho() for TBC compatibility
+ [FIX] iSP settings access via _G["iSPSettingsFrame"] instead of _G.iSP
+
 v0.1.0 - Initial Release
 --------------------------------------------------------------------------------
 

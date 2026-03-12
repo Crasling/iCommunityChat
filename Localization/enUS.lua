@@ -220,3 +220,46 @@ L["NoDescription"] = "No description set."
 L["NoRules"] = "No rules set."
 L["SettingsSaved"] = "Community settings saved."
 L["IconPicker"] = Colors.iCC .. "Choose Icon"
+
+-- ╭────────────────────────────────────────────────────────────────────────────────╮
+-- │                             Sidebar / Other Addons                            │
+-- ╰────────────────────────────────────────────────────────────────────────────────╯
+
+L["SidebarHeaderiCC"] = Colors.iCC .. "iCommunityChat|r"
+L["SidebarHeaderOtherAddons"] = Colors.iCC .. "Other Addons|r"
+
+-- iWR tab
+L["TabIWR"] = "iWR Settings"
+L["TabIWRPromo"] = "iWillRemember"
+L["IWRSettingsHeader"] = Colors.iCC .. "iWillRemember Settings"
+L["IWRInstalledDesc1"] = Colors.iCC .. "iWillRemember" .. Colors.Reset .. " is installed! You can access iWR settings from here."
+L["IWRInstalledDesc2"] = "|cFF808080Note: These settings are managed by iWR and will affect the iWR addon.|r"
+L["IWROpenSettingsButton"] = "Open iWR Settings"
+L["IWRNotFound"] = "iWR settings not found!"
+L["IWRPromoHeader"] = Colors.iCC .. "iWillRemember"
+L["IWRPromoDesc"] = Colors.iCC .. "iWillRemember" .. Colors.Reset .. " is a personalized player notes addon. Keep track of friends, foes, and memorable encounters. Add custom notes, assign relationship types, and share with your friends.\n\n" .. Colors.Reset .. "Enhanced TargetFrame, group warnings, chat integration, and more!"
+L["IWRPromoLink"] = "Available on the CurseForge App and at curseforge.com/wow/addons/iwillremember"
+
+-- iSP tab
+L["TabISP"] = "iSP Settings"
+L["TabISPPromo"] = "iSoundPlayer"
+L["ISPSettingsHeader"] = Colors.iCC .. "iSoundPlayer Settings"
+L["ISPInstalledDesc1"] = Colors.iCC .. "iSoundPlayer" .. Colors.Reset .. " is installed! You can access iSP settings from here."
+L["ISPInstalledDesc2"] = "|cFF808080Note: These settings are managed by iSP and will affect the iSP addon.|r"
+L["ISPOpenSettingsButton"] = "Open iSP Settings"
+L["ISPNotFound"] = "iSP settings not found!"
+L["ISPPromoHeader"] = Colors.iCC .. "iSoundPlayer"
+L["ISPPromoDesc"] = Colors.iCC .. "iSoundPlayer" .. Colors.Reset .. " is a custom sound player addon. Play MP3/OGG files triggered by in-game events - login, level up, achievements, kills, and more!\n\n" .. Colors.Reset .. "40+ event triggers, PvP multi-kill tracking, looping support, and advanced sound options."
+L["ISPPromoLink"] = "Available on the CurseForge App and at curseforge.com/wow/addons/isoundplayer"
+
+-- iNIF tab
+L["TabINIF"] = "iNIF Settings"
+L["TabINIFPromo"] = "iNeedIfYouNeed"
+L["INIFSettingsHeader"] = Colors.iCC .. "iNeedIfYouNeed Settings"
+L["INIFInstalledDesc1"] = Colors.iCC .. "iNeedIfYouNeed" .. Colors.Reset .. " is installed! You can access iNIF settings from here."
+L["INIFInstalledDesc2"] = "|cFF808080Note: These settings are managed by iNIF and will affect the iNIF addon.|r"
+L["INIFOpenSettingsButton"] = "Open iNIF Settings"
+L["INIFNotFound"] = "iNIF settings not found!"
+L["INIFPromoHeader"] = Colors.iCC .. "iNeedIfYouNeed"
+L["INIFPromoDesc"] = Colors.iCC .. "iNeedIfYouNeed" .. Colors.Reset .. " is a smart looting addon. It automatically rolls Need when party members need items, otherwise Greeds. Never miss the chance on random BoE loot that should have been greeded by all.\n\n" .. Colors.Reset .. "Simple checkbox on loot frames — check it and click Greed to enable monitoring."
+L["INIFPromoLink"] = "Available on the CurseForge App and at curseforge.com/wow/addons/ineedifyouneed"

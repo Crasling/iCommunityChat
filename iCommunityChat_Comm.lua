@@ -115,7 +115,7 @@ function iCC:SendChatMessage(communityKey, text)
     local communityName = iCCCommunities[communityKey] and iCCCommunities[communityKey].name or communityKey
     local playerName = strsplit("-", playerKey)
     local _, classToken = UnitClass("player")
-    iCC:PrintToAllChatFrames(iCC.Colors.iCC .. "[" .. communityName .. "] " .. iCC:ColorizePlayerNameByClass(playerName, classToken) .. ": |r" .. text)
+    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(playerName, classToken) .. ": |r" .. text)
 
     -- Fire callback so Frames can update the chat display
     iCC:SendMessage("ICC_CHAT_MESSAGE_RECEIVED", communityKey)
@@ -153,7 +153,7 @@ function iCC:OnChatMessage(prefix, message, distribution, sender)
     local communityName = iCCCommunities[communityKey] and iCCCommunities[communityKey].name or communityKey
     local senderName = strsplit("-", senderKey)
     local senderClass = iCCCommunities[communityKey].members[senderKey] and iCCCommunities[communityKey].members[senderKey].class or "UNKNOWN"
-    iCC:PrintToAllChatFrames(iCC.Colors.iCC .. "[" .. communityName .. "] " .. iCC:ColorizePlayerNameByClass(senderName, senderClass) .. ": |r" .. data.text)
+    iCC:PrintToAllChatFrames(iCC:MakeCommunityLink(communityName, communityKey) .. " " .. iCC:ColorizePlayerNameByClass(senderName, senderClass) .. ": |r" .. data.text)
 
     -- Fire callback for UI
     iCC:SendMessage("ICC_CHAT_MESSAGE_RECEIVED", communityKey)
@@ -175,6 +175,7 @@ function iCC:SendHeartbeat()
     local playerKey = iCC:GetPlayerKey()
     local _, classToken = UnitClass("player")
     local level = UnitLevel("player")
+    local guildName = GetGuildInfo("player") or ""
 
     for communityKey, community in pairs(iCCCommunities) do
         local data = {
@@ -182,6 +183,7 @@ function iCC:SendHeartbeat()
             sender = playerKey,
             class = classToken,
             level = level,
+            guild = guildName,
         }
 
         iCC:BroadcastToCommunity("iCCHeartbeat", data, communityKey, false)
@@ -192,6 +194,7 @@ function iCC:SendHeartbeat()
             community.members[playerKey].online = true
             community.members[playerKey].class = classToken
             community.members[playerKey].level = level
+            community.members[playerKey].guild = guildName
         end
 
         -- Check timeouts
@@ -222,7 +225,7 @@ function iCC:OnHeartbeat(prefix, message, distribution, sender)
         wasOffline = true
     end
 
-    iCC:UpdateMemberStatus(communityKey, senderKey, data.class, data.level)
+    iCC:UpdateMemberStatus(communityKey, senderKey, data.class, data.level, data.guild)
 
     -- Notify UI if status changed
     if wasOffline then
@@ -362,7 +365,7 @@ function iCC:OnInviteReply(prefix, message, distribution, sender)
 
     if data.accepted then
         -- Add them to our roster
-        local ok, err = iCC:AddMember(communityKey, senderKey, data.class, data.level)
+        local ok, err = iCC:AddMember(communityKey, senderKey, data.class, data.level, data.guild)
         if ok then
             local name = strsplit("-", senderKey)
             iCC:Msg(iCC:ColorizePlayerNameByClass(name, data.class) .. " joined the community!")

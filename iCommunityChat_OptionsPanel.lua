@@ -131,7 +131,7 @@ end
 local function CloseOtherAddonSettings()
     local iWRFrame = _G.iWR and _G.iWR.SettingsFrame
     if iWRFrame and iWRFrame:IsShown() then iWRFrame:Hide() end
-    local iSPFrame = _G.iSP and _G.iSP.SettingsFrame
+    local iSPFrame = _G["iSPSettingsFrame"]
     if iSPFrame and iSPFrame:IsShown() then iSPFrame:Hide() end
     local iNIFFrame = _G["iNIFSettingsFrame"]
     if iNIFFrame and iNIFFrame:IsShown() then iNIFFrame:Hide() end
@@ -286,8 +286,11 @@ function iCC:CreateOptionsPanel()
 
     local generalContainer, generalContent = CreateTabContent()
     local aboutContainer, aboutContent = CreateTabContent()
+    local iWRContainer, iWRContent = CreateTabContent()
+    local iSPContainer, iSPContent = CreateTabContent()
+    local iNIFContainer, iNIFContent = CreateTabContent()
 
-    local tabContents = { generalContainer, aboutContainer }
+    local tabContents = { generalContainer, aboutContainer, iWRContainer, iSPContainer, iNIFContainer }
     local sidebarButtons = {}
     local activeIndex = 1
 
@@ -315,48 +318,50 @@ function iCC:CreateOptionsPanel()
     -- │   Sidebar Tab Buttons    │
     -- ╰──────────────────────────╯
 
-    local tabNames = { L["SettingsGeneral"], L["SettingsAbout"] }
-    local tabY = -12
+    local sidebarItems = {
+        {type = "header", label = L["SidebarHeaderiCC"]},
+        {type = "tab", label = L["SettingsGeneral"], index = 1},
+        {type = "tab", label = L["SettingsAbout"], index = 2},
+        {type = "header", label = L["SidebarHeaderOtherAddons"]},
+        {type = "tab", label = L["TabIWRPromo"], index = 3},
+        {type = "tab", label = L["TabISPPromo"], index = 4},
+        {type = "tab", label = L["TabINIFPromo"], index = 5},
+    }
 
-    -- Sidebar header
-    local sideHeader = sidebar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    sideHeader:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 10, tabY)
-    sideHeader:SetText(iCC.Colors.iCC .. "iCC" .. iCC.Colors.Reset)
-    tabY = tabY - 20
+    local sidebarY = -6
+    for _, item in ipairs(sidebarItems) do
+        if item.type == "header" then
+            local headerText = sidebar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            headerText:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 12, sidebarY - 2)
+            headerText:SetText(item.label)
+            sidebarY = sidebarY - 20
+        else
+            local btn = CreateFrame("Button", nil, sidebar)
+            btn:SetSize(sidebarWidth - 12, 26)
+            btn:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 6, sidebarY)
 
-    for i, tabName in ipairs(tabNames) do
-        local btn = CreateFrame("Button", nil, sidebar)
-        btn:SetSize(138, 26)
-        btn:SetPoint("TOP", sidebar, "TOP", 0, tabY)
+            local bg = btn:CreateTexture(nil, "BACKGROUND")
+            bg:SetAllPoints(btn)
+            bg:SetColorTexture(0, 0, 0, 0)
+            btn.bg = bg
 
-        local bg = btn:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints(btn)
-        bg:SetColorTexture(0, 0, 0, 0)
-        btn.bg = bg
+            local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            text:SetPoint("LEFT", btn, "LEFT", 14, 0)
+            text:SetText(item.label)
+            btn.text = text
 
-        local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        text:SetPoint("LEFT", btn, "LEFT", 10, 0)
-        text:SetText(tabName)
-        btn.text = text
+            local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+            highlight:SetAllPoints(btn)
+            highlight:SetColorTexture(1, 1, 1, 0.08)
 
-        btn:SetScript("OnClick", function()
-            ShowTab(i)
-        end)
+            local tabIndex = item.index
+            btn:SetScript("OnClick", function()
+                ShowTab(tabIndex)
+            end)
 
-        btn:SetScript("OnEnter", function(self)
-            if activeIndex ~= i then
-                self.bg:SetColorTexture(1, 1, 1, 0.05)
-            end
-        end)
-
-        btn:SetScript("OnLeave", function(self)
-            if activeIndex ~= i then
-                self.bg:SetColorTexture(0, 0, 0, 0)
-            end
-        end)
-
-        sidebarButtons[i] = btn
-        tabY = tabY - 28
+            sidebarButtons[tabIndex] = btn
+            sidebarY = sidebarY - 28
+        end
     end
 
     -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -573,6 +578,210 @@ function iCC:CreateOptionsPanel()
     -- Set scroll child height
     aboutContent:SetHeight(math.abs(y) + 20)
 
+    -- ╭──────────────────────────────────────────────────────────────────────────╮
+    -- │                     TAB 3: iWillRemember                               │
+    -- │              (both variants built, toggled OnShow)                      │
+    -- ╰──────────────────────────────────────────────────────────────────────────╯
+
+    -- iWR installed variant
+    local iWRInstalledFrame = CreateFrame("Frame", nil, iWRContent)
+    iWRInstalledFrame:SetAllPoints(iWRContent)
+    iWRInstalledFrame:Hide()
+    do
+        y = -10
+        _, y = CreateSectionHeader(iWRInstalledFrame, L["IWRSettingsHeader"], y)
+
+        local iWRDesc
+        iWRDesc, y = CreateInfoText(iWRInstalledFrame,
+            L["IWRInstalledDesc1"] .. "\n\n" .. L["IWRInstalledDesc2"],
+            y, "GameFontHighlight")
+
+        y = y - 10
+
+        local iWRButton = CreateFrame("Button", nil, iWRInstalledFrame, "UIPanelButtonTemplate")
+        iWRButton:SetSize(180, 28)
+        iWRButton:SetPoint("TOPLEFT", iWRInstalledFrame, "TOPLEFT", 25, y)
+        iWRButton:SetText(L["IWROpenSettingsButton"])
+        iWRButton:SetScript("OnClick", function()
+            local iWRFrame = _G.iWR and _G.iWR.SettingsFrame
+            if iWRFrame then
+                local point, _, relPoint, xOfs, yOfs = settingsFrame:GetPoint()
+                iWRFrame:ClearAllPoints()
+                iWRFrame:SetPoint(point, UIParent, relPoint, xOfs, yOfs)
+                settingsFrame:Hide()
+                iWRFrame:Show()
+            end
+        end)
+    end
+
+    -- iWR promo variant
+    local iWRPromoFrame = CreateFrame("Frame", nil, iWRContent)
+    iWRPromoFrame:SetAllPoints(iWRContent)
+    iWRPromoFrame:Hide()
+    do
+        y = -10
+        _, y = CreateSectionHeader(iWRPromoFrame, L["IWRPromoHeader"], y)
+
+        local iWRPromo
+        iWRPromo, y = CreateInfoText(iWRPromoFrame,
+            L["IWRPromoDesc"],
+            y, "GameFontHighlight")
+
+        y = y - 4
+
+        local iWRPromoLink
+        iWRPromoLink, y = CreateInfoText(iWRPromoFrame,
+            L["IWRPromoLink"],
+            y, "GameFontDisableSmall")
+    end
+
+    scrollChildren[3]:SetHeight(400)
+
+    -- ╭──────────────────────────────────────────────────────────────────────────╮
+    -- │                     TAB 4: iSoundPlayer                                │
+    -- │              (both variants built, toggled OnShow)                      │
+    -- ╰──────────────────────────────────────────────────────────────────────────╯
+
+    -- iSP installed variant
+    local iSPInstalledFrame = CreateFrame("Frame", nil, iSPContent)
+    iSPInstalledFrame:SetAllPoints(iSPContent)
+    iSPInstalledFrame:Hide()
+    do
+        y = -10
+        _, y = CreateSectionHeader(iSPInstalledFrame, L["ISPSettingsHeader"], y)
+
+        local iSPDesc
+        iSPDesc, y = CreateInfoText(iSPInstalledFrame,
+            L["ISPInstalledDesc1"] .. "\n\n" .. L["ISPInstalledDesc2"],
+            y, "GameFontHighlight")
+
+        y = y - 10
+
+        local iSPButton = CreateFrame("Button", nil, iSPInstalledFrame, "UIPanelButtonTemplate")
+        iSPButton:SetSize(180, 28)
+        iSPButton:SetPoint("TOPLEFT", iSPInstalledFrame, "TOPLEFT", 25, y)
+        iSPButton:SetText(L["ISPOpenSettingsButton"])
+        iSPButton:SetScript("OnClick", function()
+            local iSPFrame = _G["iSPSettingsFrame"]
+            if iSPFrame then
+                local point, _, relPoint, xOfs, yOfs = settingsFrame:GetPoint()
+                iSPFrame:ClearAllPoints()
+                iSPFrame:SetPoint(point, UIParent, relPoint, xOfs, yOfs)
+                settingsFrame:Hide()
+                iSPFrame:Show()
+            end
+        end)
+    end
+
+    -- iSP promo variant
+    local iSPPromoFrame = CreateFrame("Frame", nil, iSPContent)
+    iSPPromoFrame:SetAllPoints(iSPContent)
+    iSPPromoFrame:Hide()
+    do
+        y = -10
+        _, y = CreateSectionHeader(iSPPromoFrame, L["ISPPromoHeader"], y)
+
+        local iSPPromo
+        iSPPromo, y = CreateInfoText(iSPPromoFrame,
+            L["ISPPromoDesc"],
+            y, "GameFontHighlight")
+
+        y = y - 4
+
+        local iSPPromoLink
+        iSPPromoLink, y = CreateInfoText(iSPPromoFrame,
+            L["ISPPromoLink"],
+            y, "GameFontDisableSmall")
+    end
+
+    scrollChildren[4]:SetHeight(400)
+
+    -- ╭──────────────────────────────────────────────────────────────────────────╮
+    -- │                     TAB 5: iNeedIfYouNeed                              │
+    -- │              (both variants built, toggled OnShow)                      │
+    -- ╰──────────────────────────────────────────────────────────────────────────╯
+
+    -- iNIF installed variant
+    local iNIFInstalledFrame = CreateFrame("Frame", nil, iNIFContent)
+    iNIFInstalledFrame:SetAllPoints(iNIFContent)
+    iNIFInstalledFrame:Hide()
+    do
+        y = -10
+        _, y = CreateSectionHeader(iNIFInstalledFrame, L["INIFSettingsHeader"], y)
+
+        local iNIFDesc
+        iNIFDesc, y = CreateInfoText(iNIFInstalledFrame,
+            L["INIFInstalledDesc1"] .. "\n\n" .. L["INIFInstalledDesc2"],
+            y, "GameFontHighlight")
+
+        y = y - 10
+
+        local iNIFButton = CreateFrame("Button", nil, iNIFInstalledFrame, "UIPanelButtonTemplate")
+        iNIFButton:SetSize(180, 28)
+        iNIFButton:SetPoint("TOPLEFT", iNIFInstalledFrame, "TOPLEFT", 25, y)
+        iNIFButton:SetText(L["INIFOpenSettingsButton"])
+        iNIFButton:SetScript("OnClick", function()
+            local iNIFFrame = _G["iNIFSettingsFrame"]
+            if iNIFFrame then
+                local point, _, relPoint, xOfs, yOfs = settingsFrame:GetPoint()
+                iNIFFrame:ClearAllPoints()
+                iNIFFrame:SetPoint(point, UIParent, relPoint, xOfs, yOfs)
+                settingsFrame:Hide()
+                iNIFFrame:Show()
+            end
+        end)
+    end
+
+    -- iNIF promo variant
+    local iNIFPromoFrame = CreateFrame("Frame", nil, iNIFContent)
+    iNIFPromoFrame:SetAllPoints(iNIFContent)
+    iNIFPromoFrame:Hide()
+    do
+        y = -10
+        _, y = CreateSectionHeader(iNIFPromoFrame, L["INIFPromoHeader"], y)
+
+        local iNIFPromo
+        iNIFPromo, y = CreateInfoText(iNIFPromoFrame,
+            L["INIFPromoDesc"],
+            y, "GameFontHighlight")
+
+        y = y - 4
+
+        local iNIFPromoLink
+        iNIFPromoLink, y = CreateInfoText(iNIFPromoFrame,
+            L["INIFPromoLink"],
+            y, "GameFontDisableSmall")
+    end
+
+    scrollChildren[5]:SetHeight(400)
+
+    -- ╭──────────────────────────────────────────────────────────────────────────╮
+    -- │                  Detect Addons & Toggle OnShow                          │
+    -- ╰──────────────────────────────────────────────────────────────────────────╯
+
+    settingsFrame:HookScript("OnShow", function()
+        local iWRLoaded = C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("iWillRemember")
+        iWRInstalledFrame:SetShown(iWRLoaded)
+        iWRPromoFrame:SetShown(not iWRLoaded)
+        if sidebarButtons[3] then
+            sidebarButtons[3].text:SetText(iWRLoaded and L["TabIWR"] or L["TabIWRPromo"])
+        end
+
+        local iSPLoaded = C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("iSoundPlayer")
+        iSPInstalledFrame:SetShown(iSPLoaded)
+        iSPPromoFrame:SetShown(not iSPLoaded)
+        if sidebarButtons[4] then
+            sidebarButtons[4].text:SetText(iSPLoaded and L["TabISP"] or L["TabISPPromo"])
+        end
+
+        local iNIFLoaded = C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("iNeedIfYouNeed")
+        iNIFInstalledFrame:SetShown(iNIFLoaded)
+        iNIFPromoFrame:SetShown(not iNIFLoaded)
+        if sidebarButtons[5] then
+            sidebarButtons[5].text:SetText(iNIFLoaded and L["TabINIF"] or L["TabINIFPromo"])
+        end
+    end)
+
     -- ╭──────────────────────────╮
     -- │    Show Default Tab      │
     -- ╰──────────────────────────╯
@@ -585,10 +794,6 @@ end
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
 function iCC:SettingsToggle()
-    if iCC.State.InCombat then
-        print(L["InCombat"])
-        return
-    end
     if not iCC.SettingsFrame then
         iCC:CreateOptionsPanel()
     end
@@ -601,10 +806,6 @@ function iCC:SettingsToggle()
 end
 
 function iCC:SettingsOpen()
-    if iCC.State.InCombat then
-        print(L["InCombat"])
-        return
-    end
     if not iCC.SettingsFrame then
         iCC:CreateOptionsPanel()
     end

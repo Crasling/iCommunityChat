@@ -50,6 +50,37 @@ combatEventFrame:SetScript("OnEvent", function(_, event)
 end)
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
+-- │                       Clickable Community Link Handler                        │
+-- ╰────────────────────────────────────────────────────────────────────────────────╯
+
+local origSetItemRef = SetItemRef
+SetItemRef = function(link, text, button, chatFrame)
+    local linkType, communityKey = strsplit(":", link, 3)
+    if linkType == "garrMission" then
+        local prefix
+        prefix, communityKey = strsplit(":", link:sub(#linkType + 2))
+        if prefix == "iCC" and communityKey and iCCCommunities and iCCCommunities[communityKey] then
+            iCC.State.ActiveCommunity = communityKey
+
+            if not iCC.RosterFrame or not iCC.RosterFrame:IsShown() then
+                iCC:ToggleRosterFrame()
+            else
+                iCC:UpdateCommunityTabs()
+                iCC:UpdateRosterDisplay()
+                iCC:UpdateChatDisplay()
+            end
+
+            -- Focus chat input
+            if iCC.RosterFrame and iCC.RosterFrame.chatInput then
+                iCC.RosterFrame.chatInput:SetFocus()
+            end
+            return
+        end
+    end
+    return origSetItemRef(link, text, button, chatFrame)
+end
+
+-- ╭────────────────────────────────────────────────────────────────────────────────╮
 -- │                           Player Login (Delayed)                               │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
@@ -146,10 +177,6 @@ function iCC:OnEnable()
 
         if cmd == "" or cmd == "roster" then
             -- Toggle roster window
-            if iCC.State.InCombat then
-                iCC:Msg("Cannot open UI during combat.")
-                return
-            end
             iCC:ToggleRosterFrame()
 
         elseif cmd == "create" then
@@ -185,10 +212,6 @@ function iCC:OnEnable()
             iCC:SendInvite(activeCommunity, arg)
 
         elseif cmd == "settings" or cmd == "options" then
-            if iCC.State.InCombat then
-                iCC:Msg("Cannot open UI during combat.")
-                return
-            end
             if iCC.SettingsToggle then
                 iCC:SettingsToggle()
             end

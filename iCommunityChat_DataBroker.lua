@@ -26,16 +26,8 @@ local iCCLDB = LDBroker:NewDataObject("iCommunityChat", {
     icon = "Interface\\AddOns\\iCommunityChat\\Images\\Logo_iCC",
     OnClick = function(self, button)
         if button == "LeftButton" then
-            if iCC.State.InCombat then
-                iCC:Msg("Cannot open UI during combat.")
-                return
-            end
             iCC:ToggleRosterFrame()
         elseif button == "RightButton" then
-            if iCC.State.InCombat then
-                iCC:Msg("Cannot open UI during combat.")
-                return
-            end
             if iCC.SettingsToggle then
                 iCC:SettingsToggle()
             end

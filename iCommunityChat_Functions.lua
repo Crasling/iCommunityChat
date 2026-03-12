@@ -76,6 +76,11 @@ function iCC:Msg(message)
     print(iCC.Colors.iCC .. "[iCC]: |r" .. message)
 end
 
+-- Build a clickable community name link for chat output
+function iCC:MakeCommunityLink(communityName, communityKey)
+    return "|HgarrMission:iCC:" .. communityKey .. "|h" .. iCC.Colors.iCC .. "[" .. communityName .. "]|h|r"
+end
+
 -- Print a message to General (ChatFrame1) + enabled custom chat tabs
 function iCC:PrintToAllChatFrames(message)
     -- Always write to General tab (ChatFrame1)

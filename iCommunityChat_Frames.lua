@@ -19,12 +19,12 @@
 
 local L = iCC.L
 
-local FRAME_WIDTH = 620
-local FRAME_HEIGHT = 420
+local FRAME_WIDTH = 880
+local FRAME_HEIGHT = 480
 local ROSTER_ROW_HEIGHT = 20
-local CHAT_HEIGHT = 180
 local HEADER_HEIGHT = 31
-local SIDEBAR_WIDTH = 130
+local SIDEBAR_WIDTH = 150
+local ROSTER_PANEL_WIDTH = 280
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
 -- │                            Create Roster Frame                                 │
@@ -142,11 +142,234 @@ local function CreateRosterFrame()
     frame.sidebar = sidebar
     frame.sidebarButtons = {}
 
-    -- Online count (positioned dynamically below active community tab)
-    local sidebarOnline = sidebar:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    sidebarOnline:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 20, -8)
-    sidebarOnline:SetText("")
-    frame.sidebarOnline = sidebarOnline
+    -- ╭──────────────────────────╮
+    -- │  Selected Community Icon │
+    -- ╰──────────────────────────╯
+
+    local iconArea = CreateFrame("Frame", nil, sidebar)
+    iconArea:SetSize(SIDEBAR_WIDTH - 12, 62)
+    iconArea:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 6, -6)
+
+    local iconTexture = iconArea:CreateTexture(nil, "ARTWORK")
+    iconTexture:SetSize(48, 48)
+    iconTexture:SetPoint("CENTER", iconArea, "CENTER", 0, 0)
+    iconTexture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+    iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+    frame.communityIcon = iconTexture
+    frame.communityIconArea = iconArea
+
+    -- ╭──────────────────────────╮
+    -- │      Content Area        │
+    -- ╰──────────────────────────╯
+
+    local contentArea = CreateFrame("Frame", nil, frame, iCC.BACKDROP_TEMPLATE)
+    contentArea:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 6, 0)
+    contentArea:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
+    contentArea:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 16,
+        insets = {left = 4, right = 4, top = 4, bottom = 4},
+    })
+    contentArea:SetBackdropBorderColor(0.6, 0.6, 0.7, 1)
+    contentArea:SetBackdropColor(0.08, 0.08, 0.1, 0.95)
+
+    -- ╭──────────────────────────╮
+    -- │     Empty State Panel    │
+    -- ╰──────────────────────────╯
+
+    local emptyPanel = CreateFrame("Frame", nil, contentArea)
+    emptyPanel:SetPoint("TOPLEFT", contentArea, "TOPLEFT", 4, -4)
+    emptyPanel:SetPoint("BOTTOMRIGHT", contentArea, "BOTTOMRIGHT", -4, 4)
+    emptyPanel:Hide()
+
+    local emptyText = emptyPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    emptyText:SetPoint("CENTER", emptyPanel, "CENTER", 0, 30)
+    emptyText:SetText(iCC.Colors.Gray .. L["NoCommunities"] .. iCC.Colors.Reset)
+
+    local emptyCreateBtn = CreateFrame("Button", nil, emptyPanel, "UIPanelButtonTemplate")
+    emptyCreateBtn:SetSize(180, 28)
+    emptyCreateBtn:SetPoint("CENTER", emptyPanel, "CENTER", 0, -10)
+    emptyCreateBtn:SetText(L["CreateButton"])
+    emptyCreateBtn:SetScript("OnClick", function()
+        iCC:ShowCreateCommunityDialog()
+    end)
+
+    local emptyHint = emptyPanel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    emptyHint:SetPoint("TOP", emptyCreateBtn, "BOTTOM", 0, -8)
+    emptyHint:SetText(L["CreateCommunityHint"])
+
+    frame.emptyPanel = emptyPanel
+
+    -- ╭──────────────────────────╮
+    -- │        Info Bar          │
+    -- ╰──────────────────────────╯
+
+    local infoBar = CreateFrame("Frame", nil, contentArea)
+    infoBar:SetHeight(24)
+    infoBar:SetPoint("TOPLEFT", contentArea, "TOPLEFT", 4, -4)
+    infoBar:SetPoint("TOPRIGHT", contentArea, "TOPRIGHT", -4, -4)
+    frame.infoBar = infoBar
+
+    local communityNameText = infoBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    communityNameText:SetPoint("LEFT", infoBar, "LEFT", 8, 0)
+    communityNameText:SetJustifyH("LEFT")
+    frame.communityNameText = communityNameText
+
+    local onlineText = infoBar:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    onlineText:SetPoint("RIGHT", infoBar, "RIGHT", -8, 0)
+    frame.onlineText = onlineText
+
+    -- ╭──────────────────────────╮
+    -- │   Roster Panel (right)   │
+    -- ╰──────────────────────────╯
+
+    local rosterPanel = CreateFrame("Frame", nil, contentArea, iCC.BACKDROP_TEMPLATE)
+    rosterPanel:SetWidth(ROSTER_PANEL_WIDTH)
+    rosterPanel:SetPoint("TOPRIGHT", contentArea, "TOPRIGHT", -4, -30)
+    rosterPanel:SetPoint("BOTTOMRIGHT", contentArea, "BOTTOMRIGHT", -4, 30)
+    rosterPanel:SetBackdrop({
+        bgFile = "Interface\\BUTTONS\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = {left = 3, right = 3, top = 3, bottom = 3},
+    })
+    rosterPanel:SetBackdropColor(0.05, 0.05, 0.08, 0.95)
+    rosterPanel:SetBackdropBorderColor(0.4, 0.4, 0.5, 0.6)
+    frame.rosterPanel = rosterPanel
+
+    -- Roster column headers
+    local rosterHeader = CreateFrame("Frame", nil, rosterPanel)
+    rosterHeader:SetHeight(18)
+    rosterHeader:SetPoint("TOPLEFT", rosterPanel, "TOPLEFT", 4, -4)
+    rosterHeader:SetPoint("TOPRIGHT", rosterPanel, "TOPRIGHT", -22, -4)
+
+    local nameHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    nameHeader:SetPoint("LEFT", rosterHeader, "LEFT", 16, 0)
+    nameHeader:SetText("Name")
+    nameHeader:SetTextColor(1, 0.82, 0, 1)
+
+    local guildHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    guildHeader:SetPoint("LEFT", rosterHeader, "LEFT", 96, 0)
+    guildHeader:SetWidth(78)
+    guildHeader:SetJustifyH("CENTER")
+    guildHeader:SetText("Guild")
+    guildHeader:SetTextColor(1, 0.82, 0, 1)
+
+    local rankHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    rankHeader:SetPoint("LEFT", rosterHeader, "LEFT", 178, 0)
+    rankHeader:SetWidth(50)
+    rankHeader:SetJustifyH("CENTER")
+    rankHeader:SetText("Rank")
+    rankHeader:SetTextColor(1, 0.82, 0, 1)
+
+    local levelHeader = rosterHeader:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    levelHeader:SetPoint("LEFT", rosterHeader, "LEFT", 232, 0)
+    levelHeader:SetWidth(24)
+    levelHeader:SetJustifyH("CENTER")
+    levelHeader:SetText("Lvl")
+    levelHeader:SetTextColor(1, 0.82, 0, 1)
+
+    local rosterScroll = CreateFrame("ScrollFrame", "iCCRosterScroll", rosterPanel, "UIPanelScrollFrameTemplate")
+    rosterScroll:SetPoint("TOPLEFT", rosterHeader, "BOTTOMLEFT", 0, -2)
+    rosterScroll:SetPoint("BOTTOMRIGHT", rosterPanel, "BOTTOMRIGHT", -22, 4)
+
+    local scrollChild = CreateFrame("Frame", nil, rosterScroll)
+    scrollChild:SetWidth(rosterScroll:GetWidth() or (ROSTER_PANEL_WIDTH - 30))
+    scrollChild:SetHeight(1)
+    rosterScroll:SetScrollChild(scrollChild)
+    frame.scrollChild = scrollChild
+    frame.rosterRows = {}
+
+    -- ╭──────────────────────────╮
+    -- │     Chat Panel (center)  │
+    -- ╰──────────────────────────╯
+
+    local chatBg = CreateFrame("Frame", nil, contentArea, iCC.BACKDROP_TEMPLATE)
+    chatBg:SetPoint("TOPLEFT", contentArea, "TOPLEFT", 4, -30)
+    chatBg:SetPoint("BOTTOMRIGHT", rosterPanel, "BOTTOMLEFT", -4, 0)
+    chatBg:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = {left = 3, right = 3, top = 3, bottom = 3},
+    })
+    chatBg:SetBackdropColor(0.05, 0.05, 0.08, 0.95)
+    chatBg:SetBackdropBorderColor(0.4, 0.4, 0.5, 0.6)
+    frame.chatBg = chatBg
+
+    local chatScroll = CreateFrame("ScrollFrame", "iCCChatScroll", chatBg, "UIPanelScrollFrameTemplate")
+    chatScroll:SetPoint("TOPLEFT", chatBg, "TOPLEFT", 6, -6)
+    chatScroll:SetPoint("BOTTOMRIGHT", chatBg, "BOTTOMRIGHT", -24, 30)
+
+    local chatMessages = CreateFrame("Frame", nil, chatScroll)
+    chatMessages:SetWidth(chatScroll:GetWidth() or 300)
+    chatMessages:SetHeight(1)
+    chatScroll:SetScrollChild(chatMessages)
+
+    local chatText = chatMessages:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    chatText:SetPoint("TOPLEFT", chatMessages, "TOPLEFT", 0, 0)
+    chatText:SetPoint("TOPRIGHT", chatMessages, "TOPRIGHT", 0, 0)
+    chatText:SetJustifyH("LEFT")
+    chatText:SetJustifyV("TOP")
+    chatText:SetWordWrap(true)
+    chatText:SetSpacing(2)
+    frame.chatText = chatText
+    frame.chatScroll = chatScroll
+    frame.chatMessages = chatMessages
+
+    -- ╭──────────────────────────╮
+    -- │     Chat Input Box       │
+    -- ╰──────────────────────────╯
+
+    local chatInput = CreateFrame("EditBox", "iCCChatInput", chatBg, "InputBoxTemplate")
+    chatInput:SetHeight(22)
+    chatInput:SetPoint("BOTTOMLEFT", chatBg, "BOTTOMLEFT", 10, 6)
+    chatInput:SetPoint("BOTTOMRIGHT", chatBg, "BOTTOMRIGHT", -46, 6)
+    chatInput:SetAutoFocus(false)
+    chatInput:SetMaxLetters(iCC.CONSTANTS.MAX_CHAT_MESSAGE_LENGTH)
+
+    chatInput:SetScript("OnEnterPressed", function(self)
+        local text = self:GetText()
+        if text and text ~= "" then
+            local activeCommunity = iCC.State.ActiveCommunity
+            if activeCommunity then
+                iCC:SendChatMessage(activeCommunity, text)
+            else
+                iCC:Msg("No community selected.")
+            end
+            self:SetText("")
+        end
+        self:ClearFocus()
+    end)
+
+    chatInput:SetScript("OnEscapePressed", function(self)
+        self:SetText("")
+        self:ClearFocus()
+    end)
+
+    local sendBtn = CreateFrame("Button", nil, chatBg, "UIPanelButtonTemplate")
+    sendBtn:SetSize(36, 22)
+    sendBtn:SetPoint("LEFT", chatInput, "RIGHT", 4, 0)
+    sendBtn:SetText("Send")
+    sendBtn:SetScript("OnClick", function()
+        local text = chatInput:GetText()
+        if text and text ~= "" then
+            local activeCommunity = iCC.State.ActiveCommunity
+            if activeCommunity then
+                iCC:SendChatMessage(activeCommunity, text)
+            end
+            chatInput:SetText("")
+            chatInput:ClearFocus()
+        end
+    end)
+    frame.chatInput = chatInput
+    frame.sendBtn = sendBtn
+
+    -- ╭──────────────────────────╮
+    -- │   Sidebar Action Buttons │
+    -- ╰──────────────────────────╯
 
     -- "Create Community" button (bottom of sidebar)
     local createBtn = CreateFrame("Button", nil, sidebar)
@@ -221,190 +444,6 @@ local function CreateRosterFrame()
         SlashCmdList["ICC"]("leave")
     end)
     frame.leaveBtn = leaveBtn
-
-    -- ╭──────────────────────────╮
-    -- │      Content Area        │
-    -- ╰──────────────────────────╯
-
-    local contentArea = CreateFrame("Frame", nil, frame, iCC.BACKDROP_TEMPLATE)
-    contentArea:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 6, 0)
-    contentArea:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
-    contentArea:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 16,
-        insets = {left = 4, right = 4, top = 4, bottom = 4},
-    })
-    contentArea:SetBackdropBorderColor(0.6, 0.6, 0.7, 1)
-    contentArea:SetBackdropColor(0.08, 0.08, 0.1, 0.95)
-
-    -- ╭──────────────────────────╮
-    -- │     Empty State Panel    │
-    -- ╰──────────────────────────╯
-
-    local emptyPanel = CreateFrame("Frame", nil, contentArea)
-    emptyPanel:SetPoint("TOPLEFT", contentArea, "TOPLEFT", 4, -4)
-    emptyPanel:SetPoint("BOTTOMRIGHT", contentArea, "BOTTOMRIGHT", -4, 4)
-    emptyPanel:Hide()
-
-    local emptyText = emptyPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    emptyText:SetPoint("CENTER", emptyPanel, "CENTER", 0, 30)
-    emptyText:SetText(iCC.Colors.Gray .. L["NoCommunities"] .. iCC.Colors.Reset)
-
-    local emptyCreateBtn = CreateFrame("Button", nil, emptyPanel, "UIPanelButtonTemplate")
-    emptyCreateBtn:SetSize(180, 28)
-    emptyCreateBtn:SetPoint("CENTER", emptyPanel, "CENTER", 0, -10)
-    emptyCreateBtn:SetText(L["CreateButton"])
-    emptyCreateBtn:SetScript("OnClick", function()
-        iCC:ShowCreateCommunityDialog()
-    end)
-
-    local emptyHint = emptyPanel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    emptyHint:SetPoint("TOP", emptyCreateBtn, "BOTTOM", 0, -8)
-    emptyHint:SetText(L["CreateCommunityHint"])
-
-    frame.emptyPanel = emptyPanel
-
-    -- ╭──────────────────────────╮
-    -- │     Column Headers       │
-    -- ╰──────────────────────────╯
-
-    local headerFrame = CreateFrame("Frame", nil, contentArea)
-    headerFrame:SetHeight(20)
-    headerFrame:SetPoint("TOPLEFT", contentArea, "TOPLEFT", 4, -4)
-    headerFrame:SetPoint("TOPRIGHT", contentArea, "TOPRIGHT", -4, -4)
-    frame.headerFrame = headerFrame
-
-    local statusHeader = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    statusHeader:SetPoint("LEFT", headerFrame, "LEFT", 8, 0)
-    statusHeader:SetText("")
-    statusHeader:SetWidth(16)
-
-    local nameHeader = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    nameHeader:SetPoint("LEFT", statusHeader, "RIGHT", 4, 0)
-    nameHeader:SetText("Name")
-    nameHeader:SetTextColor(1, 0.82, 0, 1)
-
-    local rankHeader = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankHeader:SetPoint("RIGHT", headerFrame, "RIGHT", -60, 0)
-    rankHeader:SetWidth(60)
-    rankHeader:SetJustifyH("CENTER")
-    rankHeader:SetText("Rank")
-    rankHeader:SetTextColor(1, 0.82, 0, 1)
-
-    local levelHeader = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelHeader:SetPoint("RIGHT", headerFrame, "RIGHT", -8, 0)
-    levelHeader:SetWidth(30)
-    levelHeader:SetJustifyH("CENTER")
-    levelHeader:SetText("Lvl")
-    levelHeader:SetTextColor(1, 0.82, 0, 1)
-
-    -- ╭──────────────────────────╮
-    -- │     Roster ScrollFrame   │
-    -- ╰──────────────────────────╯
-
-    local rosterContainer = CreateFrame("Frame", nil, contentArea)
-    rosterContainer:SetPoint("TOPLEFT", headerFrame, "BOTTOMLEFT", 0, -2)
-    rosterContainer:SetPoint("TOPRIGHT", headerFrame, "BOTTOMRIGHT", 0, -2)
-    rosterContainer:SetPoint("BOTTOM", contentArea, "BOTTOM", 0, CHAT_HEIGHT + 6)
-    frame.rosterContainer = rosterContainer
-
-    local scrollFrame = CreateFrame("ScrollFrame", "iCCRosterScroll", rosterContainer, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", rosterContainer, "TOPLEFT", 4, -2)
-    scrollFrame:SetPoint("BOTTOMRIGHT", rosterContainer, "BOTTOMRIGHT", -24, 2)
-
-    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetWidth(scrollFrame:GetWidth() or (FRAME_WIDTH - SIDEBAR_WIDTH - 68))
-    scrollChild:SetHeight(1)
-    scrollFrame:SetScrollChild(scrollChild)
-    frame.scrollChild = scrollChild
-    frame.rosterRows = {}
-
-    -- ╭──────────────────────────╮
-    -- │     Chat Panel           │
-    -- ╰──────────────────────────╯
-
-    local chatBg = CreateFrame("Frame", nil, contentArea, iCC.BACKDROP_TEMPLATE)
-    chatBg:SetHeight(CHAT_HEIGHT)
-    chatBg:SetPoint("BOTTOMLEFT", contentArea, "BOTTOMLEFT", 4, 30)
-    chatBg:SetPoint("BOTTOMRIGHT", contentArea, "BOTTOMRIGHT", -4, 30)
-    chatBg:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = {left = 3, right = 3, top = 3, bottom = 3},
-    })
-    chatBg:SetBackdropColor(0.05, 0.05, 0.08, 0.95)
-    chatBg:SetBackdropBorderColor(0.4, 0.4, 0.5, 0.6)
-    frame.chatBg = chatBg
-
-    local chatScroll = CreateFrame("ScrollFrame", "iCCChatScroll", chatBg, "UIPanelScrollFrameTemplate")
-    chatScroll:SetPoint("TOPLEFT", chatBg, "TOPLEFT", 6, -6)
-    chatScroll:SetPoint("BOTTOMRIGHT", chatBg, "BOTTOMRIGHT", -24, 6)
-
-    local chatMessages = CreateFrame("Frame", nil, chatScroll)
-    chatMessages:SetWidth(chatScroll:GetWidth() or (FRAME_WIDTH - SIDEBAR_WIDTH - 68))
-    chatMessages:SetHeight(1)
-    chatScroll:SetScrollChild(chatMessages)
-
-    local chatText = chatMessages:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    chatText:SetPoint("TOPLEFT", chatMessages, "TOPLEFT", 0, 0)
-    chatText:SetPoint("TOPRIGHT", chatMessages, "TOPRIGHT", 0, 0)
-    chatText:SetJustifyH("LEFT")
-    chatText:SetJustifyV("TOP")
-    chatText:SetWordWrap(true)
-    chatText:SetSpacing(2)
-    frame.chatText = chatText
-    frame.chatScroll = chatScroll
-    frame.chatMessages = chatMessages
-
-    -- ╭──────────────────────────╮
-    -- │     Chat Input Box       │
-    -- ╰──────────────────────────╯
-
-    local chatInput = CreateFrame("EditBox", "iCCChatInput", contentArea, "InputBoxTemplate")
-    chatInput:SetHeight(22)
-    chatInput:SetPoint("BOTTOMLEFT", contentArea, "BOTTOMLEFT", 10, 6)
-    chatInput:SetPoint("BOTTOMRIGHT", contentArea, "BOTTOMRIGHT", -46, 6)
-    chatInput:SetAutoFocus(false)
-    chatInput:SetMaxLetters(iCC.CONSTANTS.MAX_CHAT_MESSAGE_LENGTH)
-
-    chatInput:SetScript("OnEnterPressed", function(self)
-        local text = self:GetText()
-        if text and text ~= "" then
-            local activeCommunity = iCC.State.ActiveCommunity
-            if activeCommunity then
-                iCC:SendChatMessage(activeCommunity, text)
-            else
-                iCC:Msg("No community selected.")
-            end
-            self:SetText("")
-        end
-        self:ClearFocus()
-    end)
-
-    chatInput:SetScript("OnEscapePressed", function(self)
-        self:SetText("")
-        self:ClearFocus()
-    end)
-
-    local sendBtn = CreateFrame("Button", nil, contentArea, "UIPanelButtonTemplate")
-    sendBtn:SetSize(36, 22)
-    sendBtn:SetPoint("LEFT", chatInput, "RIGHT", 4, 0)
-    sendBtn:SetText("Send")
-    sendBtn:SetScript("OnClick", function()
-        local text = chatInput:GetText()
-        if text and text ~= "" then
-            local activeCommunity = iCC.State.ActiveCommunity
-            if activeCommunity then
-                iCC:SendChatMessage(activeCommunity, text)
-            end
-            chatInput:SetText("")
-            chatInput:ClearFocus()
-        end
-    end)
-    frame.chatInput = chatInput
-    frame.sendBtn = sendBtn
 
     -- ╭──────────────────────────╮
     -- │     Settings Panel       │
@@ -498,6 +537,141 @@ local function CreateRosterFrame()
 end
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
+-- │                          Roster Hover Panel                                    │
+-- ╰────────────────────────────────────────────────────────────────────────────────╯
+
+local function GetOrCreateHoverPanel()
+    if iCC.HoverPanel then return iCC.HoverPanel end
+
+    local panel = CreateFrame("Frame", "iCCHoverPanel", UIParent, "BackdropTemplate")
+    panel:SetSize(180, 120)
+    panel:SetFrameStrata("TOOLTIP")
+    panel:SetBackdrop({
+        bgFile = "Interface\\BUTTONS\\WHITE8x8",
+        edgeFile = "Interface\\BUTTONS\\WHITE8x8",
+        edgeSize = 1,
+    })
+    panel:SetBackdropColor(0.07, 0.07, 0.12, 0.95)
+    panel:SetBackdropBorderColor(0.2, 0.2, 0.25, 1)
+
+    -- Shadow overlay
+    local shadow = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    shadow:SetPoint("TOPLEFT", panel, "TOPLEFT", -1, 1)
+    shadow:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 1, -1)
+    shadow:SetFrameLevel(panel:GetFrameLevel() - 1)
+    shadow:SetBackdrop({
+        edgeFile = "Interface\\BUTTONS\\WHITE8x8",
+        edgeSize = 5,
+    })
+    shadow:SetBackdropBorderColor(0, 0, 0, 0.6)
+
+    local yOff = -8
+
+    -- Name
+    panel.nameText = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    panel.nameText:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, yOff)
+    panel.nameText:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -10, yOff)
+    panel.nameText:SetJustifyH("LEFT")
+    yOff = yOff - 18
+
+    -- Separator
+    local sep = panel:CreateTexture(nil, "ARTWORK")
+    sep:SetHeight(1)
+    sep:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, yOff)
+    sep:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, yOff)
+    sep:SetColorTexture(1, 0.82, 0, 0.3)
+    yOff = yOff - 6
+
+    -- Info labels
+    local function MakeLabel(labelText)
+        local label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, yOff)
+        label:SetJustifyH("LEFT")
+        label:SetTextColor(1, 0.82, 0, 1)
+        label:SetText(labelText)
+
+        local value = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        value:SetPoint("LEFT", label, "RIGHT", 4, 0)
+        value:SetPoint("RIGHT", panel, "RIGHT", -10, 0)
+        value:SetJustifyH("LEFT")
+        value:SetTextColor(0.8, 0.8, 0.8, 1)
+
+        yOff = yOff - 14
+        return value
+    end
+
+    panel.guildValue = MakeLabel("Guild:")
+    panel.rankValue = MakeLabel("Rank:")
+    panel.levelValue = MakeLabel("Level:")
+    panel.statusValue = MakeLabel("Status:")
+    panel.lastSeenValue = MakeLabel("Last Seen:")
+
+    panel:SetHeight(math.abs(yOff) + 8)
+    panel:Hide()
+    panel:EnableMouse(false)
+
+    iCC.HoverPanel = panel
+    return panel
+end
+
+local function ShowHoverPanel(row)
+    if not row.memberKey or not row.communityKey then return end
+    local community = iCCCommunities[row.communityKey]
+    if not community then return end
+    local member = community.members[row.memberKey]
+    if not member then return end
+
+    local panel = GetOrCreateHoverPanel()
+    local name = strsplit("-", row.memberKey)
+
+    -- Name (class-colored)
+    panel.nameText:SetText(iCC:ColorizePlayerNameByClass(name, member.class))
+
+    -- Guild
+    panel.guildValue:SetText((member.guild and member.guild ~= "") and member.guild or "-")
+
+    -- Rank (role-colored)
+    panel.rankValue:SetText(iCC:GetRoleColor(member.role) .. member.role .. iCC.Colors.Reset)
+
+    -- Level
+    panel.levelValue:SetText(tostring(member.level or "?"))
+
+    -- Status
+    if member.online then
+        panel.statusValue:SetText("|cFF00FF00Online|r")
+    else
+        panel.statusValue:SetText("|cFF808080Offline|r")
+    end
+
+    -- Last Seen
+    if member.lastSeen then
+        local elapsed = time() - member.lastSeen
+        if elapsed < 60 then
+            panel.lastSeenValue:SetText("Just now")
+        elseif elapsed < 3600 then
+            panel.lastSeenValue:SetText(math.floor(elapsed / 60) .. "m ago")
+        elseif elapsed < 86400 then
+            panel.lastSeenValue:SetText(math.floor(elapsed / 3600) .. "h ago")
+        else
+            panel.lastSeenValue:SetText(math.floor(elapsed / 86400) .. "d ago")
+        end
+    else
+        panel.lastSeenValue:SetText("-")
+    end
+
+    -- Position to the left of the roster panel
+    panel:ClearAllPoints()
+    panel:SetPoint("TOPRIGHT", row, "TOPLEFT", -4, 4)
+    panel:Show()
+end
+
+local function HideHoverPanel()
+    if iCC.HoverPanel then
+        iCC.HoverPanel:Hide()
+    end
+end
+
+-- ╭────────────────────────────────────────────────────────────────────────────────╮
 -- │                           Create Roster Row                                    │
 -- ╰────────────────────────────────────────────────────────────────────────────────╯
 
@@ -515,31 +689,48 @@ local function CreateRosterRow(parent, index)
     -- Status dot (circle indicator)
     local statusDot = row:CreateTexture(nil, "OVERLAY")
     statusDot:SetSize(8, 8)
-    statusDot:SetPoint("LEFT", row, "LEFT", 10, 0)
+    statusDot:SetPoint("LEFT", row, "LEFT", 4, 0)
     statusDot:SetTexture("Interface\\COMMON\\Indicator-Green")
     row.statusDot = statusDot
 
     -- Name
     local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    nameText:SetPoint("LEFT", statusDot, "RIGHT", 6, 0)
-    nameText:SetWidth(160)
+    nameText:SetPoint("LEFT", statusDot, "RIGHT", 4, 0)
+    nameText:SetWidth(76)
     nameText:SetJustifyH("LEFT")
     nameText:SetWordWrap(false)
     row.nameText = nameText
 
+    -- Guild
+    local guildText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    guildText:SetPoint("LEFT", row, "LEFT", 96, 0)
+    guildText:SetWidth(78)
+    guildText:SetJustifyH("CENTER")
+    guildText:SetWordWrap(false)
+    guildText:SetTextColor(0.5, 0.5, 0.5, 1)
+    row.guildText = guildText
+
     -- Rank
     local rankText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankText:SetPoint("RIGHT", row, "RIGHT", -60, 0)
-    rankText:SetWidth(60)
+    rankText:SetPoint("LEFT", row, "LEFT", 178, 0)
+    rankText:SetWidth(50)
     rankText:SetJustifyH("CENTER")
     row.rankText = rankText
 
     -- Level
     local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelText:SetPoint("RIGHT", row, "RIGHT", -8, 0)
-    levelText:SetWidth(30)
+    levelText:SetPoint("LEFT", row, "LEFT", 232, 0)
+    levelText:SetWidth(24)
     levelText:SetJustifyH("CENTER")
     row.levelText = levelText
+
+    -- Hover panel
+    row:SetScript("OnEnter", function(self)
+        ShowHoverPanel(self)
+    end)
+    row:SetScript("OnLeave", function()
+        HideHoverPanel()
+    end)
 
     -- Right-click context menu
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -577,9 +768,7 @@ function iCC:UpdateRosterDisplay()
     -- Has active community — hide empty panel
     iCC.RosterFrame.emptyPanel:Hide()
 
-    local community = iCCCommunities[communityKey]
-
-    -- Update title (always show addon name, community is visible in sidebar)
+    -- Update title (always show addon name, community is visible in info bar)
     iCC.RosterFrame.titleText:SetText(iCC.Colors.iCC .. "iCommunityChat" .. iCC.Colors.Reset)
 
     -- Get sorted roster
@@ -610,6 +799,9 @@ function iCC:UpdateRosterDisplay()
 
         -- Rank (colored by role)
         row.rankText:SetText(iCC:GetRoleColor(member.role) .. member.role .. iCC.Colors.Reset)
+
+        -- Guild
+        row.guildText:SetText(member.guild or "")
 
         -- Level
         row.levelText:SetText(tostring(member.level or "?"))
@@ -698,7 +890,7 @@ function iCC:UpdateChatDisplay()
 
     -- Update chat scroll child height to fit text
     local textHeight = iCC.RosterFrame.chatText:GetStringHeight() or 0
-    iCC.RosterFrame.chatMessages:SetWidth(iCC.RosterFrame.chatScroll:GetWidth() or (FRAME_WIDTH - SIDEBAR_WIDTH - 68))
+    iCC.RosterFrame.chatMessages:SetWidth(iCC.RosterFrame.chatScroll:GetWidth() or 300)
     iCC.RosterFrame.chatMessages:SetHeight(textHeight + 10)
 
     -- Scroll to bottom
@@ -720,11 +912,9 @@ function iCC:ToggleSettingsPanel()
     local showing = not frame.settingsPanel:IsShown()
 
     -- Toggle content visibility
-    frame.headerFrame:SetShown(not showing)
-    frame.rosterContainer:SetShown(not showing)
+    frame.infoBar:SetShown(not showing)
+    frame.rosterPanel:SetShown(not showing)
     frame.chatBg:SetShown(not showing)
-    frame.chatInput:SetShown(not showing)
-    frame.sendBtn:SetShown(not showing)
     frame.settingsPanel:SetShown(showing)
 
     if showing then
@@ -968,7 +1158,8 @@ function iCC:UpdateCommunityTabs()
     local communities = iCC:GetMyCommunities()
 
     if #communities == 0 then
-        iCC.RosterFrame.sidebarOnline:SetText("")
+        iCC.RosterFrame.communityNameText:SetText("")
+        iCC.RosterFrame.onlineText:SetText("")
         return
     end
 
@@ -977,22 +1168,36 @@ function iCC:UpdateCommunityTabs()
         iCC.State.ActiveCommunity = communities[1].key
     end
 
-    local yOffset = -8
+    local BUTTON_HEIGHT = 50
+    local yOffset = -74  -- Below icon area (62px + padding)
 
     for i, communityInfo in ipairs(communities) do
         local btn = CreateFrame("Button", nil, sidebar)
-        btn:SetSize(SIDEBAR_WIDTH - 12, 26)
+        btn:SetSize(SIDEBAR_WIDTH - 12, BUTTON_HEIGHT)
         btn:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 6, yOffset)
 
         local bg = btn:CreateTexture(nil, "BACKGROUND")
         bg:SetAllPoints(btn)
         btn.bg = bg
 
+        -- Community icon (32x32)
+        local comIcon = btn:CreateTexture(nil, "ARTWORK")
+        comIcon:SetSize(32, 32)
+        comIcon:SetPoint("LEFT", btn, "LEFT", 6, 0)
+        comIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        local iconPath = iCCCommunities[communityInfo.key] and iCCCommunities[communityInfo.key].icon
+        comIcon:SetTexture(iconPath or "Interface\\Icons\\INV_Misc_QuestionMark")
+        btn.icon = comIcon
+
+        -- Community name (right of icon)
         local label = communityInfo.name
-        if #label > 14 then label = label:sub(1, 13) .. ".." end
+        if #label > 12 then label = label:sub(1, 11) .. ".." end
 
         local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        text:SetPoint("LEFT", btn, "LEFT", 14, 0)
+        text:SetPoint("LEFT", comIcon, "RIGHT", 6, 0)
+        text:SetPoint("RIGHT", btn, "RIGHT", -4, 0)
+        text:SetJustifyH("LEFT")
+        text:SetWordWrap(true)
         text:SetText(label)
         btn.text = text
 
@@ -1022,33 +1227,25 @@ function iCC:UpdateCommunityTabs()
         end)
 
         iCC.RosterFrame.sidebarButtons[i] = btn
-        yOffset = yOffset - 26
-
-        -- Reserve extra space below active tab for online count text
-        if isActive then
-            yOffset = yOffset - 16
-        end
+        yOffset = yOffset - BUTTON_HEIGHT - 2
     end
 
-    -- Update online count below active community tab
+    -- Update info bar with active community
     local activeKey = iCC.State.ActiveCommunity
     if activeKey and iCCCommunities[activeKey] then
-        local online, total = iCC:GetOnlineCount(activeKey)
-        iCC.RosterFrame.sidebarOnline:SetText("|cFF808080" .. online .. "/" .. total .. " online|r")
+        local community = iCCCommunities[activeKey]
+        iCC.RosterFrame.communityNameText:SetText(iCC.Colors.iCC .. community.name .. iCC.Colors.Reset)
 
-        -- Position below the active tab
-        for i, communityInfo in ipairs(communities) do
-            if communityInfo.key == activeKey then
-                iCC.RosterFrame.sidebarOnline:ClearAllPoints()
-                iCC.RosterFrame.sidebarOnline:SetPoint(
-                    "TOPLEFT", iCC.RosterFrame.sidebarButtons[i],
-                    "BOTTOMLEFT", 14, -2
-                )
-                break
-            end
-        end
+        local online, total = iCC:GetOnlineCount(activeKey)
+        iCC.RosterFrame.onlineText:SetText("|cFF808080" .. online .. "/" .. total .. " Online|r")
+
+        -- Update selected community icon
+        local icon = community.icon or "Interface\\Icons\\INV_Misc_QuestionMark"
+        iCC.RosterFrame.communityIcon:SetTexture(icon)
     else
-        iCC.RosterFrame.sidebarOnline:SetText("")
+        iCC.RosterFrame.communityNameText:SetText("")
+        iCC.RosterFrame.onlineText:SetText("")
+        iCC.RosterFrame.communityIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
     end
 end
 
@@ -1130,7 +1327,7 @@ function iCC:ShowMemberContextMenu(anchorFrame, memberKey, communityKey)
         text = "Who",
         notCheckable = true,
         func = function()
-            SendWho('n-"' .. memberName .. '"')
+            C_FriendList.SendWho('n-"' .. memberName .. '"')
         end,
     }
 
@@ -1141,17 +1338,6 @@ function iCC:ShowMemberContextMenu(anchorFrame, memberKey, communityKey)
             notCheckable = true,
             func = function()
                 InviteUnit(memberName)
-            end,
-        }
-    end
-
-    -- Create iWR note
-    if iWR then
-        menu[#menu + 1] = {
-            text = "Create Note (iWR)",
-            notCheckable = true,
-            func = function()
-                SlashCmdList["IWR"](memberName)
             end,
         }
     end

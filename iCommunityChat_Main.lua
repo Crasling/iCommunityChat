@@ -86,29 +86,29 @@ iCC.COMMUNITY_ICONS = {
     -- Faction & PvP
     "Interface\\Icons\\INV_BannerPVP_01",
     "Interface\\Icons\\INV_BannerPVP_02",
-    "Interface\\Icons\\Achievement_PVP_A_A",
-    "Interface\\Icons\\Achievement_PVP_H_H",
+    "Interface\\Icons\\INV_BannerPVP_03",
+    "Interface\\Icons\\Spell_Holy_ChampionsBond",
     -- Raid Markers
-    "Interface\\Icons\\INV_Misc_QirajiCrystal_05",  -- Star
-    "Interface\\Icons\\INV_Misc_Gem_FlameSpessarite_02",  -- Circle
-    "Interface\\Icons\\INV_Misc_Gem_Variety_02",  -- Diamond
-    "Interface\\Icons\\INV_Misc_Gem_Pearl_06",  -- Triangle
-    "Interface\\Icons\\INV_Misc_Gem_Opal_01",  -- Moon
-    "Interface\\Icons\\INV_Misc_Gem_Emerald_03",  -- Square
-    "Interface\\Icons\\Spell_Shadow_SacrificialShield",  -- Cross
-    "Interface\\Icons\\INV_Misc_Bone_Skull_01",  -- Skull
+    "Interface\\Icons\\INV_Misc_QirajiCrystal_05",         -- Star
+    "Interface\\Icons\\INV_Misc_Gem_FlameSpessarite_02",    -- Circle
+    "Interface\\Icons\\INV_Misc_Gem_Variety_02",            -- Diamond
+    "Interface\\Icons\\INV_Misc_Gem_Pearl_06",              -- Triangle
+    "Interface\\Icons\\INV_Misc_Gem_Opal_01",               -- Moon
+    "Interface\\Icons\\INV_Misc_Gem_Emerald_03",            -- Square
+    "Interface\\Icons\\Spell_Shadow_SacrificialShield",     -- Cross
+    "Interface\\Icons\\INV_Misc_Bone_Skull_01",             -- Skull
     -- Classes
-    "Interface\\Icons\\INV_Sword_04",         -- Warrior
-    "Interface\\Icons\\INV_Hammer_01",        -- Paladin
-    "Interface\\Icons\\INV_Weapon_Bow_07",    -- Hunter
-    "Interface\\Icons\\INV_ThrowingKnife_04", -- Rogue
-    "Interface\\Icons\\INV_Staff_30",         -- Priest
-    "Interface\\Icons\\Spell_Deathknight_ClassIcon", -- DK
-    "Interface\\Icons\\INV_Jewelry_Talisman_04", -- Shaman
-    "Interface\\Icons\\INV_Staff_13",         -- Mage
-    "Interface\\Icons\\Spell_Nature_FaerieFire", -- Warlock
-    "Interface\\Icons\\INV_Staff_01",         -- Druid
-    -- Misc
+    "Interface\\Icons\\INV_Sword_04",                       -- Warrior
+    "Interface\\Icons\\INV_Hammer_01",                      -- Paladin
+    "Interface\\Icons\\INV_Weapon_Bow_07",                  -- Hunter
+    "Interface\\Icons\\INV_ThrowingKnife_04",               -- Rogue
+    "Interface\\Icons\\INV_Staff_30",                       -- Priest
+    "Interface\\Icons\\Spell_Shadow_DemonBreath",           -- DK (TBC-safe)
+    "Interface\\Icons\\INV_Jewelry_Talisman_04",            -- Shaman
+    "Interface\\Icons\\INV_Staff_13",                       -- Mage
+    "Interface\\Icons\\Spell_Nature_FaerieFire",            -- Warlock
+    "Interface\\Icons\\INV_Staff_01",                       -- Druid
+    -- Social
     "Interface\\Icons\\INV_Misc_GroupLooking",
     "Interface\\Icons\\INV_Misc_GroupNeedMore",
     "Interface\\Icons\\Ability_Warrior_RallyingCry",
@@ -119,9 +119,16 @@ iCC.COMMUNITY_ICONS = {
     "Interface\\Icons\\Ability_Parry",
     "Interface\\Icons\\Spell_Holy_AuraOfLight",
     "Interface\\Icons\\Spell_Fire_Flare",
+    -- Nature & Magic
     "Interface\\Icons\\Spell_Nature_StormReach",
     "Interface\\Icons\\Spell_Shadow_Twilight",
     "Interface\\Icons\\Spell_Arcane_PortalDalaran",
+    "Interface\\Icons\\Spell_Frost_FrostBolt02",
+    "Interface\\Icons\\Spell_Nature_Regeneration",
+    "Interface\\Icons\\Spell_Holy_PowerWordShield",
+    "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "Interface\\Icons\\Spell_Nature_EarthBind",
+    -- Items & Professions
     "Interface\\Icons\\INV_Chest_Chain",
     "Interface\\Icons\\INV_Crown_01",
     "Interface\\Icons\\Ability_Rogue_Sprint",
@@ -129,6 +136,7 @@ iCC.COMMUNITY_ICONS = {
     "Interface\\Icons\\Trade_Engineering",
     "Interface\\Icons\\INV_Pick_02",
     "Interface\\Icons\\INV_Misc_Herb_Frostlotus",
+    "Interface\\Icons\\Trade_Alchemy",
 }
 
 -- ╭────────────────────────────────────────────────────────────────────────────────╮
